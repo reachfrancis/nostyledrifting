@@ -33,27 +33,6 @@ ng-style-compare --url https://github.com/org/repo.git --branch1 v1.0.0 --branch
 
 ---
 
-### Story 0.2: Workspace Validation
-**As a** developer  
-**I want to** validate that both branches contain valid Angular projects  
-**So that** I can ensure the comparison will work correctly
-
-**Acceptance Criteria:**
-- Verify angular.json exists in both directories
-- Validate Angular workspace configuration
-- Check for required dependencies in package.json
-- Identify Angular version in each branch
-- Verify SCSS preprocessor configuration
-- Handle multiple projects in Angular workspace
-- Report any missing or incompatible configurations
-
-**Technical Notes:**
-- Parse angular.json for project structure
-- Check for @angular/core in dependencies
-- Validate stylePreprocessorOptions
-- Support Nx workspaces if applicable
-
----
 
 ## Epic 1: SCSS Extraction Engine
 
@@ -75,10 +54,11 @@ ng-style-compare --url https://github.com/org/repo.git --branch1 v1.0.0 --branch
 
 **Technical Notes:**
 - Support for Angular CLI standard project structure
-- Handle both standalone and module-based components
+- the angular applications will use  standalone components.
 - Track import relationships between SCSS files
 
 ---
+
 
 ### Story 1.2: SCSS Parser Implementation
 **As a** developer  
