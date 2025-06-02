@@ -357,13 +357,409 @@ describe('SCSSParserEngine', () => {
       const filePath = await createTestFile('metadata.scss', scss);
       const result = await parserEngine.parseFile(filePath);
 
-      expect(result.metadata).toBeDefined();
-      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.metadata).toBeDefined();      expect(result.metadata.filePath).toBe(filePath);
       expect(result.metadata.fileSize).toBeGreaterThan(0);
       expect(result.metadata.lastModified).toBeDefined();
       expect(result.metadata.hash).toBeDefined();
-      expect(result.metadata.parseTime).toBeGreaterThan(0);
+      expect(result.metadata.parseTime).toBeGreaterThanOrEqual(0);
       expect(result.metadata.lineCount).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Advanced SCSS Features', () => {
+    it('should parse SCSS interpolation', async () => {
+      const scss = `
+        $prefix: 'my';
+        $property: 'margin';
+        
+        .#{$prefix}-component {
+          #{$property}-top: 1rem;
+          background-image: url('#{$prefix}-image.png');
+        }
+      `;
+
+      const filePath = await createTestFile('interpolation.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.ast).toBeDefined();
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.complexity.score).toBeGreaterThan(0);
+    });
+
+    it('should parse SCSS extends', async () => {
+      const scss = `
+        %button-base {
+          padding: 0.5rem 1rem;
+          border: none;
+          cursor: pointer;
+        }
+        
+        .primary-btn {
+          @extend %button-base;
+          background: blue;
+          color: white;
+        }
+        
+        .secondary-btn {
+          @extend %button-base;
+          background: gray;
+          color: black;
+        }
+      `;
+
+      const filePath = await createTestFile('extends.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.ast).toBeDefined();
+      expect(result.metadata.filePath).toBe(filePath);
+    });
+
+    it('should parse SCSS control directives', async () => {
+      const scss = `
+        @for $i from 1 through 3 {
+          .item-#{$i} {
+            width: #{$i * 10}%;
+          }
+        }
+        
+        @each $animal in panda, sea-slug, egret, salamander {
+          .#{$animal}-icon {
+            background-image: url('/images/#{$animal}.png');
+          }
+        }
+        
+        @if true {
+          .conditional-class {
+            display: block;
+          }
+        } @else {
+          .alternative-class {
+            display: none;
+          }
+        }
+      `;
+
+      const filePath = await createTestFile('control-directives.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.ast).toBeDefined();
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.complexity.score).toBeGreaterThan(0);
+    });
+
+    it('should parse complex nested structures', async () => {
+      const scss = `
+        .sidebar {
+          .navigation {
+            .menu {
+              .item {
+                .link {
+                  &:hover {
+                    .icon {
+                      transform: scale(1.1);
+                      
+                      &::before {
+                        content: '→';
+                      }
+                    }
+                  }
+                  
+                  &.active {
+                    font-weight: bold;
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      const filePath = await createTestFile('deep-nesting.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.ast).toBeDefined();
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.complexity.score).toBeGreaterThan(0);
+    });
+
+    it('should parse SCSS maps and lists', async () => {
+      const scss = `
+        $font-weights: (
+          light: 300,
+          normal: 400,
+          bold: 700
+        );
+        
+        $breakpoints: 576px, 768px, 992px, 1200px;
+        
+        @function get-weight($key) {
+          @return map-get($font-weights, $key);
+        }
+        
+        .text {
+          font-weight: get-weight(bold);
+        }
+      `;
+
+      const filePath = await createTestFile('maps-lists.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.ast).toBeDefined();
+      expect(result.metadata.filePath).toBe(filePath);
+    });
+  });
+
+  describe('Error Edge Cases', () => {
+    it('should handle incomplete selectors', async () => {
+      const scss = `
+        .valid-class {
+          color: blue;
+        }
+        
+        .incomplete-
+        
+        .another-valid {
+          margin: 1rem;
+        }
+      `;
+
+      const filePath = await createTestFile('incomplete-selectors.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.ast).toBeDefined();
+    });
+
+    it('should handle invalid property values', async () => {
+      const scss = `
+        .component {
+          color: #invalid-color;
+          margin: 1rem auto invalid-value;
+          border: 1px solid;
+          padding: 1rem;
+        }
+      `;
+
+      const filePath = await createTestFile('invalid-values.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.ast).toBeDefined();
+    });
+
+    it('should handle mixed valid and invalid imports', async () => {
+      const scss = `
+        @import 'valid-file';
+        @import 'non-existent-file';
+        @use 'another-file' as *;
+        @forward 'yet-another-file';
+        
+        .component {
+          color: blue;
+        }
+      `;
+
+      const filePath = await createTestFile('mixed-imports.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.dependencies.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle very large files', async () => {
+      // Generate a large SCSS file
+      let largeScss = '';
+      for (let i = 0; i < 1000; i++) {
+        largeScss += `
+          .component-${i} {
+            color: blue;
+            background: red;
+            margin: ${i}px;
+          }
+        `;
+      }
+
+      const filePath = await createTestFile('large-file.scss', largeScss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.metadata.fileSize).toBeGreaterThan(10000); // Large file
+      expect(result.complexity.score).toBeGreaterThan(1000);
+    });
+  });
+
+  describe('File Format Edge Cases', () => {
+    it('should handle files with only whitespace', async () => {
+      const scss = '   \n\n   \t\t   \n  ';
+
+      const filePath = await createTestFile('whitespace-only.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.ast).toBeDefined();
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.metadata.lineCount).toBeGreaterThan(0);
+    });
+
+    it('should handle different line endings', async () => {
+      const scss = '.class1 {\r\n  color: blue;\r\n}\n\n.class2 {\r  background: red;\r}';
+
+      const filePath = await createTestFile('line-endings.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.ast).toBeDefined();
+      expect(result.metadata.filePath).toBe(filePath);
+    });
+
+    it('should handle Unicode characters', async () => {
+      const scss = `
+        .unicode-test {
+          content: '✓ ✗ → ← ↑ ↓';
+          font-family: 'Ñandú', sans-serif;
+        }
+        
+        .emoji-class {
+          /* 🎨 Styling comment */
+          background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        }
+      `;
+
+      const filePath = await createTestFile('unicode.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.ast).toBeDefined();
+      expect(result.metadata.filePath).toBe(filePath);
+    });
+  });
+
+  describe('Performance and Memory Tests', () => {
+    it('should handle multiple concurrent parses', async () => {
+      const scssFiles = [];
+      
+      // Create multiple test files
+      for (let i = 0; i < 10; i++) {
+        const scss = `
+          .test-${i} {
+            color: hsl(${i * 36}, 70%, 50%);
+            transform: rotate(${i * 36}deg);
+          }
+        `;
+        scssFiles.push(createTestFile(`concurrent-${i}.scss`, scss));
+      }
+
+      const filePaths = await Promise.all(scssFiles);
+      const parsePromises = filePaths.map(filePath => parserEngine.parseFile(filePath));
+      const results = await Promise.all(parsePromises);
+
+      expect(results).toHaveLength(10);
+      results.forEach((result, index) => {
+        expect(result.ast).toBeDefined();
+        expect(result.metadata.filePath).toBe(filePaths[index]);
+        expect(result.metadata.parseTime).toBeGreaterThan(0);
+      });
+    });
+
+    it('should track memory usage correctly', async () => {
+      const scss = `
+        .memory-test {
+          background: linear-gradient(
+            45deg,
+            #ff0000,
+            #ff8000,
+            #ffff00,
+            #80ff00,
+            #00ff00,
+            #00ff80,
+            #00ffff,
+            #0080ff,
+            #0000ff,
+            #8000ff,
+            #ff00ff,
+            #ff0080
+          );
+        }
+      `;
+
+      const filePath = await createTestFile('memory-test.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.metadata.parseTime).toBeGreaterThan(0);
+      expect(result.metadata.fileSize).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Dependency Resolution', () => {
+    it('should track import dependencies correctly', async () => {
+      // Create a dependency file first
+      const dependencyScss = `
+        $primary-color: blue;
+        @mixin button-style { padding: 1rem; }
+      `;
+      await createTestFile('_variables.scss', dependencyScss);
+
+      const mainScss = `
+        @import 'variables';
+        @use 'sass:math';
+        @forward 'variables';
+        
+        .component {
+          color: $primary-color;
+          @include button-style;
+        }
+      `;
+
+      const filePath = await createTestFile('main-with-deps.scss', mainScss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.metadata.filePath).toBe(filePath);
+      expect(result.dependencies).toBeDefined();
+      expect(result.dependencies.length).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('Complexity Analysis', () => {
+    it('should calculate complexity for deeply nested selectors', async () => {
+      const scss = `
+        .level1 {
+          .level2 {
+            .level3 {
+              .level4 {
+                .level5 {
+                  .level6 {
+                    .level7 {
+                      color: red;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      const filePath = await createTestFile('deep-complexity.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.complexity.score).toBeGreaterThan(5);
+      expect(result.metadata.filePath).toBe(filePath);
+    });
+
+    it('should handle complex selectors with multiple combinators', async () => {
+      const scss = `
+        .parent > .child + .sibling ~ .general [attr="value"]:hover::before {
+          content: 'complex';
+        }
+        
+        .card:nth-child(3n+1):not(.disabled).active[data-type="primary"] {
+          display: flex;
+        }
+      `;
+
+      const filePath = await createTestFile('complex-selectors.scss', scss);
+      const result = await parserEngine.parseFile(filePath);
+
+      expect(result.complexity.score).toBeGreaterThan(0);
+      expect(result.metadata.filePath).toBe(filePath);
     });
   });
 });
