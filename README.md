@@ -1,3 +1,7 @@
+
+# When updated run
+> `npm run build`
+
 # NoStyleDrifting - Git Branch Comparison Tool
 
 A simplified CLI utility for comparing Angular styles between Git branches. This tool creates temporary directories with branch content to enable style analysis and comparison.
