@@ -1,12 +1,12 @@
 {
-  "name": "nosdrift",
+  "name": "nostyledrifting",
   "version": "1.0.0",
   "description": "CLI utility that catches Style Drifts introduced by AI agents",
   "main": "dist/index.js",
   "bin": {
+    "nodrift": "./dist/index.js",
     "ng-style-compare": "./dist/index.js",
-    "nostyledrifting": "./dist/index.js",
-    "nosdrift": "./dist/index.js"
+    "nostyledrifting": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
