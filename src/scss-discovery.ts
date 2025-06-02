@@ -392,12 +392,13 @@ export class ScssDiscoveryEngine {
           imports.push(resolvedPath);
         }
       }
-      
-      return imports;
+        return imports;
     } catch {
       return [];
     }
-  }  private resolveImportPath(importPath: string, fromFile: string): string | null {
+  }
+
+  private resolveImportPath(importPath: string, fromFile: string): string | null {
     try {
       const dir = path.dirname(fromFile);
       
