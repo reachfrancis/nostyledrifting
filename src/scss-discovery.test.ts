@@ -178,24 +178,29 @@ describe('ScssDiscoveryEngine', () => {
     it('should handle file access errors gracefully', async () => {
       const inaccessibleDir = path.join(tempDir, 'inaccessible');
       await fs.ensureDir(inaccessibleDir);
-      
       const scssFile = path.join(inaccessibleDir, 'test.scss');
-      await fs.writeFile(scssFile, '.test { color: blue; }');      // Use jest.spyOn to mock fs.pathExists
-      const pathExistsSpy = jest.spyOn(fs, 'pathExists');
-      pathExistsSpy.mockImplementation(async (filePath) => {
-        if (typeof filePath === 'string' && filePath.includes('test.scss')) {
-          return false;
-        }
-        return true; // Return true for all other files
-      });
+      await fs.writeFile(scssFile, '.test { color: blue; }');
 
-      const discovery = await engine.discoverScssFiles(tempDir, 'test');
-      
-      // Should complete without throwing, but file should not be in results
+      // Use jest.doMock to mock fs-extra for this test
+      jest.resetModules();
+      jest.doMock('fs-extra', () => {
+        const actualFs = jest.requireActual('fs-extra');
+        return Object.assign({}, actualFs, {
+          pathExists: async (filePath: any) => {
+            if (typeof filePath === 'string' && filePath.includes('test.scss')) {
+              return false;
+            }
+            return true;
+          }
+        });
+      });
+      // Re-import after mocking
+      const { ScssDiscoveryEngine: MockedEngine } = require('./scss-discovery');
+      const mockedEngine = new MockedEngine();
+      const discovery = await mockedEngine.discoverScssFiles(tempDir, 'test');
       expect(discovery.files.length).toBe(0);
-      
-      // Restore original fs.pathExists
-      pathExistsSpy.mockRestore();
+      jest.dontMock('fs-extra');
+      jest.resetModules();
     });
 
     it('should handle invalid import paths', async () => {
