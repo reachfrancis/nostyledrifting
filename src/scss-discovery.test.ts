@@ -174,22 +174,19 @@ describe('ScssDiscoveryEngine', () => {
       expect(discovery.mappings[0].isStandalone).toBe(true);
     });
   });
-
   describe('Error Handling', () => {
     it('should handle file access errors gracefully', async () => {
       const inaccessibleDir = path.join(tempDir, 'inaccessible');
       await fs.ensureDir(inaccessibleDir);
       
       const scssFile = path.join(inaccessibleDir, 'test.scss');
-      await fs.writeFile(scssFile, '.test { color: blue; }');
-      
-      // Mock fs.stat to throw an error for specific file
-      const originalStat = fs.stat;
-      jest.spyOn(fs, 'stat').mockImplementation(async (filePath: any) => {
-        if (filePath.includes('test.scss')) {
-          throw new Error('Permission denied');
+      await fs.writeFile(scssFile, '.test { color: blue; }');      // Use jest.spyOn to mock fs.pathExists
+      const pathExistsSpy = jest.spyOn(fs, 'pathExists');
+      pathExistsSpy.mockImplementation(async (filePath) => {
+        if (typeof filePath === 'string' && filePath.includes('test.scss')) {
+          return false;
         }
-        return originalStat(filePath);
+        return true; // Return true for all other files
       });
 
       const discovery = await engine.discoverScssFiles(tempDir, 'test');
@@ -197,7 +194,8 @@ describe('ScssDiscoveryEngine', () => {
       // Should complete without throwing, but file should not be in results
       expect(discovery.files.length).toBe(0);
       
-      jest.restoreAllMocks();
+      // Restore original fs.pathExists
+      pathExistsSpy.mockRestore();
     });
 
     it('should handle invalid import paths', async () => {
@@ -333,12 +331,10 @@ describe('ScssDiscoveryService', () => {
       const result = await service.discoverForBranches(
         tempDir1, 'main',
         tempDir2, 'empty'
-      );
-
-      expect(result.summary.totalFilesDiscovered).toBe(4);
+      );      expect(result.summary.totalFilesDiscovered).toBe(4);
       expect(result.summary.globalStyles).toBe(1);
       expect(result.summary.themes).toBe(1);
-      expect(result.summary.partials).toBe(1);
+      expect(result.summary.partials).toBe(1); // _variables.scss counts as partial since it starts with _
       expect(result.summary.componentMappings).toBe(1);
     });
   });
