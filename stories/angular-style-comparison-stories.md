@@ -83,6 +83,10 @@ ng-style-compare --url https://github.com/org/repo.git --branch1 v1.0.0 --branch
 
 ---
 
+
+### Left off here!
+
+
 ### Story 1.3: Typography Property Extraction
 **As a** accessibility reviewer  
 **I want to** extract all typography-related properties from SCSS  
