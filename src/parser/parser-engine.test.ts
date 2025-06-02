@@ -1,126 +1,214 @@
 import { SCSSParserEngine, ParserConfig, ParseResult } from './parser-engine';
 import { ParseErrorType, ParseErrorSeverity } from './error-recovery';
-import { DeclarationNode, RuleNode, CommentNode, RootNode } from './ast-nodes';
+import { DeclarationNode, RuleNode, CommentNode, RootNode, ImportStatementNode, UseStatementNode, AtRuleNode } from './ast-nodes';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 describe('SCSSParserEngine', () => {
-  let parserEngine: SCSSParserEngine;
-  let tempDir: string;
+    let parserEngine: SCSSParserEngine;
+    let tempDir: string;
 
-  beforeEach(async () => {
-    // Create parser with test configuration
-    const config: ParserConfig = {
-      enableErrorRecovery: true,
-      maxParseAttempts: 3,
-      enableCaching: false, // Disable caching for tests
-      enableComplexityAnalysis: true,
-      timeoutMs: 5000,
-      enableVerboseLogging: false
-    };
-    
-    parserEngine = new SCSSParserEngine(config);
-    tempDir = path.join(__dirname, 'temp-test-' + uuidv4());
-    await fs.ensureDir(tempDir);
-  });
+    beforeEach(async () => {
+        // Create parser with test configuration
+        const config: ParserConfig = {
+            enableErrorRecovery: true,
+            maxParseAttempts: 3,
+            enableCaching: false, // Disable caching for tests
+            enableComplexityAnalysis: true,
+            timeoutMs: 5000,
+            enableVerboseLogging: false
+        };
+        
+        parserEngine = new SCSSParserEngine(config);
+        tempDir = path.join(__dirname, 'temp-test-' + uuidv4());
+        await fs.ensureDir(tempDir);
+    });
 
-  afterEach(async () => {
-    // Clean up temporary directory
-    if (await fs.pathExists(tempDir)) {
-      await fs.remove(tempDir);
+    afterEach(async () => {
+        // Clean up temporary directory
+        if (await fs.pathExists(tempDir)) {
+            await fs.remove(tempDir);
+        }
+    });
+
+    // Helper method to create test files
+    async function createTestFile(filename: string, content: string): Promise<string> {
+        const filePath = path.join(tempDir, filename);
+        await fs.writeFile(filePath, content, 'utf8');
+        return filePath;
     }
-  });
 
-  // Helper method to create test files
-  async function createTestFile(filename: string, content: string): Promise<string> {
-    const filePath = path.join(tempDir, filename);
-    await fs.writeFile(filePath, content, 'utf8');
-    return filePath;
-  }
-
-  describe('Basic SCSS Parsing', () => {
-    it('should parse a simple SCSS file', async () => {
-      const scss = `
-        .test-class {
-          color: red;
-          background: blue;
-        }
-      `;
-      
-      const filePath = await createTestFile('test.scss', scss);
-      const result = await parserEngine.parseFile(filePath);
-
-      expect(result.ast).toBeDefined();
-      expect(result.errors).toHaveLength(0);
-      expect(result.metadata.lineCount).toBeGreaterThan(0);
-      expect(result.metadata.filePath).toBe(filePath);
-    });
-
-    it('should parse SCSS variables', async () => {
-      const scss = `
-        $primary-color: #007bff;
-        $font-size: 16px;
-        
-        .button {
-          color: $primary-color;
-          font-size: $font-size;
-        }
-      `;
-
-      const filePath = await createTestFile('variables.scss', scss);
-      const result = await parserEngine.parseFile(filePath);
-
-      expect(result.ast).toBeDefined();
-      expect(result.errors).toHaveLength(0);
-      expect(result.metadata.filePath).toBe(filePath);
-    });
-
-    it('should parse SCSS imports', async () => {
-      const scss = `
-        @import 'variables';
-        @use 'mixins' as m;
-        
-        .component {
-          color: blue;
-        }
-      `;
-
-      const filePath = await createTestFile('imports.scss', scss);
-      const result = await parserEngine.parseFile(filePath);
-
-      expect(result.ast).toBeDefined();
-      expect(result.dependencies.length).toBeGreaterThanOrEqual(0);
-      expect(result.metadata.filePath).toBe(filePath);
-    });
-
-    it('should parse nested selectors', async () => {
-      const scss = `
-        .card {
-          padding: 1rem;
-          
-          .header {
-            font-weight: bold;
+    describe('Basic SCSS Parsing', () => {
+        it('should parse a simple SCSS file', async () => {
+            const scss = `
+                .test-class {
+                    color: red;
+                    background: blue;
+                }
+            `;
             
-            &.primary {
-              color: blue;
-            }
-          }
-          
-          .content {
-            margin-top: 0.5rem;
-          }
-        }
-      `;
+            const filePath = await createTestFile('test.scss', scss);
+            const result = await parserEngine.parseFile(filePath);
 
-      const filePath = await createTestFile('nested.scss', scss);
-      const result = await parserEngine.parseFile(filePath);
+            expect(result.ast).toBeDefined();
+            expect(result.errors).toHaveLength(0);
+            expect(result.metadata.lineCount).toBeGreaterThan(0);
+            expect(result.metadata.filePath).toBe(filePath);
+        });
 
-      expect(result.ast).toBeDefined();
-      expect(result.metadata.filePath).toBe(filePath);
-      expect(result.complexity.score).toBeGreaterThanOrEqual(0);
+        it('should parse SCSS variables', async () => {
+            const scss = `
+                $primary-color: #007bff;
+                $font-size: 16px;
+                
+                .button {
+                    color: $primary-color;
+                    font-size: $font-size;
+                }
+            `;
+
+            const filePath = await createTestFile('variables.scss', scss);
+            const result = await parserEngine.parseFile(filePath);
+
+            expect(result.ast).toBeDefined();
+            expect(result.errors).toHaveLength(0);
+            expect(result.metadata.filePath).toBe(filePath);
+        });
+
+        it('should parse SCSS imports', async () => {
+            const scss = `
+                @import 'variables';
+                @use 'mixins' as m;
+                
+                .component {
+                    color: blue;
+                }
+            `;
+
+            const filePath = await createTestFile('imports.scss', scss);
+            const result = await parserEngine.parseFile(filePath);
+
+            expect(result.ast).toBeDefined();
+            expect(result.dependencies.length).toBeGreaterThanOrEqual(0);
+            expect(result.metadata.filePath).toBe(filePath);
+        });
+
+        it('should parse nested selectors', async () => {
+            const scss = `
+                .card {
+                    padding: 1rem;
+                    
+                    .header {
+                        font-weight: bold;
+                        
+                        &.primary {
+                            color: blue;
+                        }
+                    }
+                    
+                    .content {
+                        margin-top: 0.5rem;
+                    }
+                }
+            `;
+
+            const filePath = await createTestFile('nested.scss', scss);
+            const result = await parserEngine.parseFile(filePath);
+
+            expect(result.ast).toBeDefined();
+            expect(result.metadata.filePath).toBe(filePath);
+            expect(result.complexity.score).toBeGreaterThanOrEqual(0);
+        });
+
+        it('should parse empty SCSS file', async () => {
+            const scss = '';
+            
+            const filePath = await createTestFile('empty.scss', scss);
+            const result = await parserEngine.parseFile(filePath);
+
+            expect(result.ast).toBeDefined();
+            expect(result.errors).toHaveLength(0);
+            expect(result.metadata.lineCount).toBe(1);
+            expect(result.metadata.fileSize).toBe(0);
+        });        it('should parse SCSS with only comments', async () => {
+            const scss = `
+                // This is a comment
+                /* Multi-line comment
+                   across multiple lines */
+            `;
+
+            const filePath = await createTestFile('comments.scss', scss);
+            const result = await parserEngine.parseFile(filePath);
+
+            expect(result.ast).toBeDefined();
+            expect(result.metadata.filePath).toBe(filePath);
+            expect(result.metadata.lineCount).toBeGreaterThan(0);
+        });
+
+        it('should parse SCSS mixins and includes', async () => {
+            const scss = `
+                @mixin button-style($color: blue) {
+                    background: $color;
+                    border: 1px solid $color;
+                    padding: 0.5rem 1rem;
+                }
+                
+                .primary-button {
+                    @include button-style(#007bff);
+                }
+                
+                .secondary-button {
+                    @include button-style(#6c757d);
+                }
+            `;
+
+            const filePath = await createTestFile('mixins.scss', scss);
+            const result = await parserEngine.parseFile(filePath);            expect(result.ast).toBeDefined();
+            expect(result.errors).toHaveLength(0);
+            expect(result.complexity.score).toBeGreaterThanOrEqual(0);
+        });
+
+        it('should parse SCSS functions', async () => {
+            const scss = `
+                @function calculate-rem($pixels) {
+                    @return #{$pixels / 16}rem;
+                }
+                
+                .component {
+                    font-size: calculate-rem(18);
+                    margin: calculate-rem(24) 0;
+                }
+            `;
+
+            const filePath = await createTestFile('functions.scss', scss);
+            const result = await parserEngine.parseFile(filePath);            expect(result.ast).toBeDefined();
+            expect(result.complexity.score).toBeGreaterThanOrEqual(0);
+        });
+
+        it('should parse SCSS at-rules', async () => {
+            const scss = `
+                @media (max-width: 768px) {
+                    .mobile-hidden {
+                        display: none;
+                    }
+                }
+                
+                @supports (display: grid) {
+                    .grid-container {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                    }
+                }
+            `;
+
+            const filePath = await createTestFile('at-rules.scss', scss);
+            const result = await parserEngine.parseFile(filePath);
+
+            expect(result.ast).toBeDefined();
+            expect(result.metadata.filePath).toBe(filePath);
+        });
     });
-  });
 
   describe('Error Handling', () => {
     it('should handle malformed SCSS gracefully', async () => {

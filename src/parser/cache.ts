@@ -288,7 +288,9 @@ export class ParserCache {
     try {
       await fs.ensureDir(this.diskCacheDir);
     } catch (error) {
-      console.warn(`Failed to create cache directory: ${error.message}`);
+    
+      console.warn(`Failed to create cache directory: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    
     }
   }
 }
