@@ -226,67 +226,67 @@ export class TypographyExtractor {
     const extractFromNode = async (node: SCSSNode, parentSelectors: string[] = []): Promise<void> => {
       try {
         switch (node.type) {
-          case 'rule':
-            const ruleNode = node as RuleNode;
-            const newParentSelectors = [...parentSelectors, ruleNode.selector];
+          // Handle declarations anywhere, using current selector context
+          case 'declaration': {
+            const declNode = node as DeclarationNode;
+            if (this.isTypographyProperty(declNode.property)) {
+              const currentSelector = parentSelectors[parentSelectors.length - 1] || '';
+              const entry = await this.createTypographyEntry(
+                declNode,
+                currentSelector,
+                parentSelectors,
+                variableContext,
+                mediaQueryStack,
+                options
+              );
+              if (entry) {
+                entries.push(entry);
+              }
+            }
+            break;
+          }
+        
+
+         case 'rule': {
+           const ruleNode = node as RuleNode;
+           const newParentSelectors = [...parentSelectors, ruleNode.selector];
             
-            // Process declarations in this rule
+            // Recurse into all children to capture blocks and nested rules
             for (const child of node.children) {
-              if (child.type === 'declaration') {
-                const declNode = child as DeclarationNode;
-                if (this.isTypographyProperty(declNode.property)) {
-                  const entry = await this.createTypographyEntry(
-                    declNode,
-                    ruleNode.selector,
-                    newParentSelectors,
-                    variableContext,
-                    mediaQueryStack,
-                    options
-                  );
-                  if (entry) {
-                    entries.push(entry);
-                  }
-                }
-              }
-            }
-
-            // Process nested rules
-            for (const child of node.children) {
-              if (child.type === 'rule') {
-                await extractFromNode(child, newParentSelectors);
-              }
+              await extractFromNode(child, newParentSelectors);
             }
             break;
+         }
 
-          case 'atrule':
-            const atRuleNode = node as AtRuleNode;
-            if (atRuleNode.name === 'media') {
-              // Parse media query and add to stack
-              const mediaQuery = this.mediaQueryAnalyzer.parseMediaQuery(atRuleNode.params || '');
-              if (mediaQuery) {
-                mediaQueryStack.push(mediaQuery);
-                
-                // Process children with media query context
-                for (const child of node.children) {
-                  await extractFromNode(child, parentSelectors);
-                }
-                
-                mediaQueryStack.pop();
-              }
-            } else {
-              // Process other at-rules normally
-              for (const child of node.children) {
-                await extractFromNode(child, parentSelectors);
-              }
-            }
-            break;
+         case 'atrule':
+           const atRuleNode = node as AtRuleNode;
+           if (atRuleNode.name === 'media') {
+             // Parse media query and add to stack
+             const mediaQuery = this.mediaQueryAnalyzer.parseMediaQuery(atRuleNode.params || '');
+             if (mediaQuery) {
+               mediaQueryStack.push(mediaQuery);
+               
+               // Process children with media query context
+               for (const child of node.children) {
+                 await extractFromNode(child, parentSelectors);
+               }
+               
+               mediaQueryStack.pop();
+             }
+           } else {
+             // Process other at-rules normally
+             for (const child of node.children) {
+               await extractFromNode(child, parentSelectors);
+             }
+           }
+           break;
 
-          default:
-            // Process children of other node types
-            for (const child of node.children) {
-              await extractFromNode(child, parentSelectors);
-            }
-            break;
+         default:
+           // Process children of other node types
+           for (const child of node.children) {
+             await extractFromNode(child, parentSelectors);
+           }
+           break;
         }
       } catch (error) {
         this.handleExtractionError(error, node);
