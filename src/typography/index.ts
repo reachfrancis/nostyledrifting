@@ -51,15 +51,12 @@ export class TypographyAPI {
     
     if (this.cache.selectorCache.has(cacheKey)) {
       return this.buildResultFromCache(cacheKey);
-    }
-
-    const extractionResult = await this.extractor.extractTypography(ast, filePath, options);
-    const analysisResult = await this.analyzer.analyzeTypography(extractionResult);
+    }    const extractionResult = await this.extractor.extractTypography(ast, filePath, options);
 
     // Cache the results
-    this.cacheResults(cacheKey, analysisResult);
+    this.cacheResults(cacheKey, extractionResult);
 
-    return analysisResult;
+    return extractionResult;
   }
 
   /**

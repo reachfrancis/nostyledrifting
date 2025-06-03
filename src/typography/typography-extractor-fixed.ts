@@ -160,62 +160,6 @@ export class TypographyExtractor {
   }
 
   /**
-   * Stream typography extraction for large files
-   */
-  async* streamTypographyExtraction(
-    ast: SCSSNode,
-    filePath?: string,
-    options?: ExtractionOptions
-  ): AsyncGenerator<TypographyEntry, void, unknown> {
-    const extractionOptions = this.mergeOptions(options);
-    
-    try {
-      // Build variable resolution context
-      const variableContext = this.buildVariableContext(ast);
-
-      // Extract and yield entries in chunks
-      for await (const entry of this.streamExtractTypographyEntries(ast, variableContext, extractionOptions)) {
-        yield entry;
-      }
-    } catch (error) {
-      this.addError(ExtractionErrorType.PROCESSING_ERROR, `Stream extraction failed: ${error}`, filePath);
-      throw error;
-    }
-  }
-
-  /**
-   * Stream extract typography entries from AST
-   */
-  private async* streamExtractTypographyEntries(
-    node: SCSSNode,
-    variableContext: VariableResolutionContext,
-    options: ExtractionOptions
-  ): AsyncGenerator<TypographyEntry, void, unknown> {
-    if (!node || !node.children) return;
-
-    for (const child of node.children) {
-      // Process rule nodes
-      if (child.type === 'RULE') {
-        const ruleNode = child as RuleNode;
-        for (const declaration of ruleNode.children) {
-          if (declaration.type === 'DECLARATION') {
-            const declNode = declaration as DeclarationNode;
-            if (this.isTypographyProperty(declNode.property)) {
-              const entry = await this.createTypographyEntry(declNode, ruleNode, variableContext, options);
-              if (entry) {
-                yield entry;
-              }
-            }
-          }
-        }
-      }
-
-      // Recursively process children
-      yield* this.streamExtractTypographyEntries(child, variableContext, options);
-    }
-  }
-
-  /**
    * Build variable resolution context from AST
    */
   private buildVariableContext(ast: SCSSNode): VariableResolutionContext {

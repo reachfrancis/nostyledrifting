@@ -1,7 +1,31 @@
 
 import { TypographyAPI } from './index';
-import { ASTNode, ASTNodeType } from '../parser/ast-nodes';
+import { 
+  RootNode, 
+  RuleNode, 
+  AtRuleNode, 
+  BlockNode, 
+  DeclarationNode, 
+  VariableNode,
+  TextNode,
+  SourceLocation,
+  ASTNode,
+  ASTNodeType,
+  SCSSNode
+} from '../parser/ast-nodes';
 import { TypographyEntry, ExtractionOptions } from './types';
+
+// Helper function to create mock source location
+function createMockLocation(file: string = 'test.scss', line: number = 1, column: number = 1): SourceLocation {
+  return {
+    file,
+    line,
+    column,
+    offset: 0,
+    length: 10,
+    context: []
+  };
+}
 
 describe('Typography Integration Tests', () => {
   let api: TypographyAPI;
@@ -69,7 +93,7 @@ describe('Typography Integration Tests', () => {
 
       expect(fontFaces).toHaveLength(1);
       expect(fontFaces[0].fontFamily).toBe('CustomFont');
-      expect(fontFaces[0].src).toContain('custom-font.woff2');
+      expect(fontFaces[0].sources[0].url).toContain('custom-font.woff2');
     });
 
     it('should provide font loading recommendations', async () => {
@@ -220,334 +244,208 @@ describe('Typography Integration Tests', () => {
 
 // Helper functions to create test ASTs
 function createComponentStyleAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.RULE,
-        children: [
-          {
-            type: ASTNodeType.SELECTOR,
-            value: '.component',
-            children: []
-          },
-          {
-            type: ASTNodeType.DECLARATION_BLOCK,
-            children: [
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'font-family',
-                value: 'Inter, sans-serif',
-                children: []
-              },
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'font-size',
-                value: '16px',
-                children: []
-              },
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'font-weight',
-                value: '400',
-                children: []
-              },
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'line-height',
-                value: '1.5',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  // Create the root stylesheet
+  const root = new RootNode(location);
+  
+  // Create rule node (.component)
+  const rule = new RuleNode('.component', location);
+  
+  // Create declaration block
+  const block = new BlockNode(location);
+  
+  // Create declarations
+  const fontFamily = new DeclarationNode('font-family', 'Inter, sans-serif', false, location);
+  const fontSize = new DeclarationNode('font-size', '16px', false, location);
+  const fontWeight = new DeclarationNode('font-weight', '400', false, location);
+  const lineHeight = new DeclarationNode('line-height', '1.5', false, location);
+  
+  // Add declarations to block
+  block.addChild(fontFamily);
+  block.addChild(fontSize);
+  block.addChild(fontWeight);
+  block.addChild(lineHeight);
+  
+  // Add block to rule
+  rule.addChild(block);
+  
+  // Add rule to root
+  root.addChild(rule);
+  
+  return root;
 }
 
 function createVariableAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.VARIABLE_DECLARATION,
-        property: '$font-size-base',
-        value: '16px',
-        children: []
-      },
-      {
-        type: ASTNodeType.RULE,
-        children: [
-          {
-            type: ASTNodeType.SELECTOR,
-            value: '.text',
-            children: []
-          },
-          {
-            type: ASTNodeType.DECLARATION_BLOCK,
-            children: [
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'font-size',
-                value: '$font-size-base',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  
+  // Create variable declaration
+  const variable = new VariableNode('$font-size-base', '16px', false, false, location);
+  root.addChild(variable);
+  
+  // Create rule using the variable
+  const rule = new RuleNode('.text', location);
+  const block = new BlockNode(location);
+  const fontSize = new DeclarationNode('font-size', '$font-size-base', false, location);
+  
+  block.addChild(fontSize);
+  rule.addChild(block);
+  root.addChild(rule);
+  
+  return root;
 }
 
 function createFunctionAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.RULE,
-        children: [
-          {
-            type: ASTNodeType.SELECTOR,
-            value: '.text',
-            children: []
-          },
-          {
-            type: ASTNodeType.DECLARATION_BLOCK,
-            children: [
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'line-height',
-                value: 'calc(1.5 * 1em)',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  const rule = new RuleNode('.text', location);
+  const block = new BlockNode(location);
+  const lineHeight = new DeclarationNode('line-height', 'calc(1.5 * 1em)', false, location);
+  
+  block.addChild(lineHeight);
+  rule.addChild(block);
+  root.addChild(rule);
+  
+  return root;
 }
 
 function createResponsiveAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.AT_RULE,
-        name: 'media',
-        parameters: '(min-width: 768px)',
-        children: [
-          {
-            type: ASTNodeType.RULE,
-            children: [
-              {
-                type: ASTNodeType.SELECTOR,
-                value: '.responsive-text',
-                children: []
-              },
-              {
-                type: ASTNodeType.DECLARATION_BLOCK,
-                children: [
-                  {
-                    type: ASTNodeType.DECLARATION,
-                    property: 'font-size',
-                    value: '18px',
-                    children: []
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  
+  // Create media query at-rule
+  const mediaRule = new AtRuleNode('media', '(min-width: 768px)', location);
+  
+  // Create rule inside media query
+  const rule = new RuleNode('.responsive-text', location);
+  const block = new BlockNode(location);
+  const fontSize = new DeclarationNode('font-size', '18px', false, location);
+  
+  block.addChild(fontSize);
+  rule.addChild(block);
+  mediaRule.addChild(rule);
+  root.addChild(mediaRule);
+  
+  return root;
 }
 
 function createFontFaceAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.AT_RULE,
-        name: 'font-face',
-        children: [
-          {
-            type: ASTNodeType.DECLARATION_BLOCK,
-            children: [
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'font-family',
-                value: 'CustomFont',
-                children: []
-              },
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'src',
-                value: 'url("custom-font.woff2") format("woff2")',
-                children: []
-              },
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'font-weight',
-                value: '400',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  
+  // Create @font-face at-rule
+  const fontFaceRule = new AtRuleNode('font-face', '', location);
+  const block = new BlockNode(location);
+  
+  // Create declarations
+  const fontFamily = new DeclarationNode('font-family', 'CustomFont', false, location);
+  const src = new DeclarationNode('src', 'url("custom-font.woff2") format("woff2")', false, location);
+  const fontWeight = new DeclarationNode('font-weight', '400', false, location);
+  
+  block.addChild(fontFamily);
+  block.addChild(src);
+  block.addChild(fontWeight);
+  fontFaceRule.addChild(block);
+  root.addChild(fontFaceRule);
+  
+  return root;
 }
 
 function createCustomPropertiesAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.RULE,
-        children: [
-          {
-            type: ASTNodeType.SELECTOR,
-            value: ':root',
-            children: []
-          },
-          {
-            type: ASTNodeType.DECLARATION_BLOCK,
-            children: [
-              {
-                type: ASTNodeType.DECLARATION,
-                property: '--font-size-base',
-                value: '16px',
-                children: []
-              },
-              {
-                type: ASTNodeType.DECLARATION,
-                property: '--line-height-base',
-                value: '1.5',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  
+  // Create :root rule
+  const rootRule = new RuleNode(':root', location);
+  const block = new BlockNode(location);
+  
+  // Create custom property declarations
+  const fontSizeBase = new DeclarationNode('--font-size-base', '16px', false, location);
+  const lineHeightBase = new DeclarationNode('--line-height-base', '1.5', false, location);
+  
+  block.addChild(fontSizeBase);
+  block.addChild(lineHeightBase);
+  rootRule.addChild(block);
+  root.addChild(rootRule);
+  
+  return root;
 }
 
 function createLargeAST(): ASTNode {
-  const rules = [];
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  
+  // Create 100 rules for testing large AST performance
   for (let i = 0; i < 100; i++) {
-    rules.push({
-      type: ASTNodeType.RULE,
-      children: [
-        {
-          type: ASTNodeType.SELECTOR,
-          value: `.component-${i}`,
-          children: []
-        },
-        {
-          type: ASTNodeType.DECLARATION_BLOCK,
-          children: [
-            {
-              type: ASTNodeType.DECLARATION,
-              property: 'font-size',
-              value: `${14 + i}px`,
-              children: []
-            }
-          ]
-        }
-      ]
-    });
+    const rule = new RuleNode(`.component-${i}`, location);
+    const block = new BlockNode(location);
+    const fontSize = new DeclarationNode('font-size', `${14 + i}px`, false, location);
+    
+    block.addChild(fontSize);
+    rule.addChild(block);
+    root.addChild(rule);
   }
-
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: rules
-  };
+  
+  return root;
 }
 
 function createInvalidAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.RULE,
-        children: [
-          {
-            type: ASTNodeType.SELECTOR,
-            value: null as any,
-            children: []
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  
+  // Create a rule with intentionally invalid/null selector for error testing
+  const rule = new RuleNode('', location); // Empty selector instead of null
+  const block = new BlockNode(location);
+  
+  rule.addChild(block);
+  root.addChild(rule);
+  
+  return root;
 }
 
 function createAccessibilityTestAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.RULE,
-        children: [
-          {
-            type: ASTNodeType.SELECTOR,
-            value: '.small-text',
-            children: []
-          },
-          {
-            type: ASTNodeType.DECLARATION_BLOCK,
-            children: [
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'font-size',
-                value: '12px',
-                children: []
-              },
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'line-height',
-                value: '1.2',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  
+  // Create rule for small text accessibility testing
+  const rule = new RuleNode('.small-text', location);
+  const block = new BlockNode(location);
+  
+  // Create declarations with potentially problematic accessibility values
+  const fontSize = new DeclarationNode('font-size', '12px', false, location);
+  const lineHeight = new DeclarationNode('line-height', '1.2', false, location);
+  
+  block.addChild(fontSize);
+  block.addChild(lineHeight);
+  rule.addChild(block);
+  root.addChild(rule);
+    return root;
 }
 
 function createFontAccessibilityAST(): ASTNode {
-  return {
-    type: ASTNodeType.STYLESHEET,
-    children: [
-      {
-        type: ASTNodeType.RULE,
-        children: [
-          {
-            type: ASTNodeType.SELECTOR,
-            value: '.system-font',
-            children: []
-          },
-          {
-            type: ASTNodeType.DECLARATION_BLOCK,
-            children: [
-              {
-                type: ASTNodeType.DECLARATION,
-                property: 'font-family',
-                value: 'system-ui, -apple-system, sans-serif',
-                children: []
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const location = createMockLocation();
+  
+  const root = new RootNode(location);
+  
+  // Create rule for system font accessibility testing
+  const rule = new RuleNode('.system-font', location);
+  const block = new BlockNode(location);
+  
+  // Create declaration with system font stack
+  const fontFamily = new DeclarationNode('font-family', 'system-ui, -apple-system, sans-serif', false, location);
+  
+  block.addChild(fontFamily);
+  rule.addChild(block);
+  root.addChild(rule);
+  
+  return root;
 }
