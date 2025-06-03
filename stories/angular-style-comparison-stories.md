@@ -27,8 +27,7 @@
 **CLI Example:**
 ```bash
 ng-style-compare --repo /path/to/angular-project --branch1 main --branch2 feature/new-ui
-# OR
-ng-style-compare --url https://github.com/org/repo.git --branch1 v1.0.0 --branch2 v2.0.0
+
 ```
 
 ---

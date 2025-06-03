@@ -1,7 +1,9 @@
 # Simplified Git Branch Comparison - Run Inside Angular Project
 
 ## Overview
-Since the tool will run inside the Angular project, we can eliminate most of the complexity around repository discovery, authentication, and remote handling. The tool simply needs to checkout different branches and create temporary directories for comparison.
+Since the tool will run inside the Angular project, we can eliminate most of the complexity 
+around repository discovery, authentication, and remote handling. The tool 
+simply needs to checkout different branches and create temporary directories for comparison.
 
 ## Simplified Architecture
 
