@@ -264,3 +264,22 @@ export interface ComplexityMetrics {
   functionCount: number;
   totalNodes: number;
 }
+
+// Export ASTNode as an alias for SCSSNode
+export type ASTNode = SCSSNode;
+
+// Export ASTNodeType enum for compatibility
+export enum ASTNodeType {
+  STYLESHEET = 'root',
+  RULE = 'rule',
+  SELECTOR = 'selector',
+  DECLARATION_BLOCK = 'block',
+  DECLARATION = 'declaration',
+  AT_RULE = 'atrule',
+  VARIABLE_DECLARATION = 'variable',
+  FUNCTION_DECLARATION = 'function',
+  MIXIN_DECLARATION = 'mixin',
+  COMMENT = 'comment',
+  IMPORT = 'import',
+  USE = 'use'
+}

@@ -64,13 +64,22 @@ export class TypographyExtractor {
     this.fontFaceProcessor = new FontFaceProcessor();
     this.propertyExtractorFactory = new PropertyExtractorFactory();
     this.analyzer = new TypographyAnalyzer();
-  }
-
-  /**
+  }  /**
    * Main extraction method
    */
   public async extract(
     ast: SCSSNode,
+    options: Partial<ExtractionOptions> = {}
+  ): Promise<TypographyAnalysisResult> {
+    return this.extractTypography(ast, '', options);
+  }
+
+  /**
+   * Extract typography from AST with file path context
+   */
+  public async extractTypography(
+    ast: SCSSNode,
+    filePath: string,
     options: Partial<ExtractionOptions> = {}
   ): Promise<TypographyAnalysisResult> {
     const extractionOptions: ExtractionOptions = {
@@ -110,7 +119,7 @@ export class TypographyExtractor {
         summary: {
           totalProperties: entries.length,
           uniqueFonts: this.countUniqueFonts(entries),
-          responsiveProperties: entries.filter(e => e.metadata.isResponsive).length,
+          responsiveProperties: entries.filter((e: TypographyEntry) => e.metadata.isResponsive).length,
           customProperties: customProperties.length,
           fontFaceDeclarations: fontFaces.length
         },
@@ -129,17 +138,174 @@ export class TypographyExtractor {
 
       const duration = Date.now() - startTime;
       console.log(`Typography extraction completed in ${duration}ms`);
-
-      return result;    } catch (error: unknown) {
+      return result;
+    } catch (error: unknown) {
       const extractionError: ExtractionError = {
         type: ExtractionErrorType.UNSUPPORTED_SYNTAX,
         message: `Extraction failed: ${error instanceof Error ? error.message : String(error)}`,
         location: ast.location,
-        recovery: { action: 'skip' }
-      };
-      
+        recovery: {
+          recover: () => ({
+            canRecover: false,
+            recoveredValue: null,
+            strategy: 'skip' as const,
+            warnings: [`Skipped extraction due to error: ${error instanceof Error ? error.message : String(error)}`]
+          })
+        }      };
       this.errors.push(extractionError);
       throw error;
+    }
+  }
+
+  /**
+   * Build variable resolution context from AST
+   */
+  private buildVariableContext(ast: SCSSNode): VariableResolutionContext {
+    // TODO: Implement variable context building
+    return {
+      currentScope: this.createGlobalScope(),
+      variables: new Map(),
+      imports: new Map(),
+      functions: new Map()
+    };
+  }
+
+  /**
+   * Extract typography entries from AST
+   */
+  private async extractTypographyEntries(
+    ast: SCSSNode,
+    variableContext: VariableResolutionContext,
+    options: ExtractionOptions
+  ): Promise<TypographyEntry[]> {
+    // TODO: Implement typography entry extraction
+    return [];
+  }
+
+  /**
+   * Extract custom properties from AST
+   */
+  private extractCustomProperties(ast: SCSSNode): CustomPropertyDefinition[] {
+    // TODO: Implement custom property extraction
+    return [];
+  }
+
+  /**
+   * Organize extracted data
+   */
+  private organizeExtractedData(entries: TypographyEntry[]) {
+    return {
+      byProperty: new Map(),
+      bySelector: new Map(),
+      byBreakpoint: new Map()
+    };
+  }
+
+  /**
+   * Count unique fonts in entries
+   */
+  private countUniqueFonts(entries: TypographyEntry[]): number {
+    const fonts = new Set<string>();
+    entries
+      .filter((e: TypographyEntry) => e.property === 'font-family')
+      .forEach((e: TypographyEntry) => fonts.add(e.value.resolved));
+    return fonts.size;
+  }
+
+  /**
+   * Create global scope context
+   */
+  private createGlobalScope(): ScopeContext {
+    return {
+      type: 'global',
+      variables: new Map(),
+      parent: null
+    };
+  }
+
+  /**
+   * Create cache instance
+   */
+  private createCache(): TypographyCache {
+    return {
+      get: () => null,
+      set: () => {},
+      invalidate: () => {},
+      clear: () => {}
+    };
+  }
+
+  /**
+   * Configure the extractor
+   */
+  public configure(config: Partial<ExtractorConfiguration>): void {
+    this.config = { ...this.config, ...config };
+  }
+
+  /**
+   * Get extraction errors
+   */
+  public getErrors(): ExtractionError[] {
+    return this.errors;
+  }
+
+  /**
+   * Clear cache
+   */
+  public clearCache(): void {
+    this.cache.invalidate('manual' as InvalidationReason);
+  }
+}
+  }
+
+  /**
+   * Process a single node and extract typography entries
+   */
+  private async processNode(
+    node: SCSSNode,
+    variableContext: VariableResolutionContext,
+    options: ExtractionOptions
+  ): Promise<TypographyEntry[]> {
+    const entries: TypographyEntry[] = [];
+
+    if (node.type === 'declaration') {
+      const declNode = node as DeclarationNode;
+      if (this.isTypographyProperty(declNode.property)) {
+        // Find the parent rule to get selector
+        let selector = 'unknown';
+        let parent = node.parent;
+        while (parent && parent.type !== 'rule') {
+          parent = parent.parent;
+        }
+        if (parent && parent.type === 'rule') {
+          const ruleNode = parent as RuleNode;
+          selector = ruleNode.selector;
+        }
+
+        const entry = await this.createTypographyEntry(
+          declNode,
+          selector,
+          [],
+          variableContext,
+          [],
+          options
+        );
+        if (entry) {
+          entries.push(entry);
+        }
+      }
+    }
+
+    return entries;
+  }
+
+  /**
+   * Walk AST nodes for streaming processing
+   */
+  private *walkAST(node: SCSSNode): Generator<SCSSNode, void, unknown> {
+    yield node;
+    for (const child of node.children) {
+      yield* this.walkAST(child);
     }
   }
 
@@ -476,12 +642,18 @@ export class TypographyExtractor {
       }
     };
   }
-  private handleExtractionError(error: unknown, node: SCSSNode): void {
-    const extractionError: ExtractionError = {
+  private handleExtractionError(error: unknown, node: SCSSNode): void {    const extractionError: ExtractionError = {
       type: ExtractionErrorType.UNSUPPORTED_SYNTAX,
       message: error instanceof Error ? error.message : 'Unknown extraction error',
       location: node.location,
-      recovery: { action: 'skip' }
+      recovery: {
+        recover: () => ({
+          canRecover: false,
+          recoveredValue: null,
+          strategy: 'skip',
+          warnings: [`Skipped node due to error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+        })
+      }
     };
     
     this.errors.push(extractionError);

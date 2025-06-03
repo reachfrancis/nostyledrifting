@@ -1,6 +1,7 @@
-import { SourceLocation, SCSSNode } from '../parser/ast-nodes';
+import { SourceLocation as ParserSourceLocation, SCSSNode } from '../parser/ast-nodes';
 
-// Type alias for compatibility with existing parser
+// Re-export for convenience
+export type SourceLocation = ParserSourceLocation;
 export type ASTNode = SCSSNode;
 
 /**
@@ -374,6 +375,10 @@ export type InvalidationReason = 'file-change' | 'dependency-change' | 'manual' 
  * Error handling
  */
 export enum ExtractionErrorType {
+  PARSE_ERROR = 'PARSE_ERROR',
+  AST_ERROR = 'AST_ERROR',
+  IMPORT_ERROR = 'IMPORT_ERROR',
+  MISSING_PROPERTY = 'MISSING_PROPERTY',
   INVALID_PROPERTY_VALUE = 'INVALID_PROPERTY_VALUE',
   VARIABLE_NOT_FOUND = 'VARIABLE_NOT_FOUND',
   CIRCULAR_DEPENDENCY = 'CIRCULAR_DEPENDENCY',
@@ -395,9 +400,45 @@ export interface ExtractionError {
   context?: any;
 }
 
+/**
+ * Error handling interfaces
+ */
+export interface ErrorContext {
+  filePath: string;
+  operation: string;
+  astNode?: SCSSNode;
+  property?: string;
+  value?: string;
+  source?: string;
+  selector?: string;
+  [key: string]: any;
+}
+
 export interface RecoveryStrategy {
-  action: 'skip' | 'default' | 'partial' | 'retry';
-  fallbackValue?: string;
+  recover(error: ExtractionError, context: ErrorContext): RecoveryResult;
+}
+
+export interface RecoveryResult {
+  canRecover: boolean;
+  recoveredValue: any;
+  strategy: string;
+  warnings: string[];
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ExtractionError[];
+  warnings: string[];
+}
+
+export interface ErrorStatistics {
+  totalErrors: number;
+  errorsByType: Map<string, number>;
+  errorsByFile: Map<string, number>;
+  errorsByOperation: Map<string, number>;
+  criticalErrors: number;
+  warningErrors: number;
+  recoveredErrors: number;
 }
 
 /**
