@@ -1,5 +1,5 @@
 
-import { TypographyExtractor } from './typography-extractor';
+import { TypographyExtractor } from './typography-extractor-fixed';
 import { TypographyAnalyzer } from './typography-analyzer';
 import { StreamingTypographyExtractor } from './streaming-extractor';
 import { PerformanceOptimizer, PerformanceReport } from './performance-optimizer';
@@ -74,16 +74,34 @@ export class TypographyAPI {
 
     return this.mergeResults(results);
   }
-
   /**
    * Stream typography extraction for large files
-   */
-  async *streamExtractFromAST(
+   */  async *streamExtractFromAST(
     ast: ASTNode,
     filePath: string,
     options?: Partial<ExtractionOptions>
   ): AsyncGenerator<TypographyEntry, void, unknown> {
-    yield* this.extractor.streamTypographyExtraction(ast, filePath, options);
+    // Provide default values for required options
+    const fullOptions: ExtractionOptions = {
+      resolveVariables: true,
+      evaluateFunctions: true,
+      computeValues: true,
+      parallel: true,
+      cacheResults: true,
+      includeContext: true,
+      includeMetadata: true,
+      ...options
+    };
+    
+    // Use streaming extractor for memory-efficient processing
+    const streamingExtractor = new StreamingTypographyExtractor({
+      maxCacheSize: 1000,
+      timeoutMs: 30000,
+      enableStreaming: true,
+      chunkSize: 100
+    });
+    
+    yield* streamingExtractor.streamExtraction(ast, filePath, fullOptions);
   }
 
   /**
@@ -139,7 +157,6 @@ export class TypographyAPI {
 
     return result.typography.customProperties;
   }
-
   /**
    * Analyze typography consistency across multiple files
    */
@@ -147,16 +164,26 @@ export class TypographyAPI {
     results: TypographyAnalysisResult[]
   ): Promise<TypographyAnalysisResult> {
     const merged = this.mergeResults(results);
-    return this.analyzer.analyzeTypography(merged);
+    return this.analyzer.analyzeTypography(merged.typography.entries);
   }
-
   /**
    * Get typography recommendations
    */
   async getRecommendations(
     result: TypographyAnalysisResult
   ): Promise<string[]> {
-    return this.analyzer.generateRecommendations(result);
+    // For now, return basic recommendations based on the analysis
+    const recommendations: string[] = [];
+    
+    if (result.accessibility.recommendations) {
+      recommendations.push(...result.accessibility.recommendations.map(r => r.message));
+    }
+    
+    if (result.consistency.issues) {
+      recommendations.push(...result.consistency.issues.map(i => i.message));
+    }
+    
+    return recommendations;
   }
 
   /**
@@ -200,16 +227,19 @@ export class TypographyAPI {
 
     return errors;
   }
-
   private createCache(maxSize: number): TypographyCache {
+    const variableCache = new Map();
+    const functionCache = new Map();
+    const selectorCache = new Map();
+    
     return {
-      variableCache: new Map(),
-      functionCache: new Map(),
-      selectorCache: new Map(),
+      variableCache,
+      functionCache,
+      selectorCache,
       invalidate: (reason) => {
-        this.variableCache.clear();
-        this.functionCache.clear();
-        this.selectorCache.clear();
+        variableCache.clear();
+        functionCache.clear();
+        selectorCache.clear();
       }
     } as TypographyCache;
   }
@@ -223,10 +253,39 @@ export class TypographyAPI {
     const astHash = this.hashAST(ast);
     return `${filePath}:${astHash}:${optionsHash}`;
   }
-
   private hashAST(ast: ASTNode): string {
-    // Simple hash implementation - in production, use a proper hash function
-    return JSON.stringify(ast).substring(0, 50);
+    // Create a hash without circular references
+    const visited = new WeakSet();
+    
+    function serializeForHash(obj: any): any {
+      if (obj === null || typeof obj !== 'object') {
+        return obj;
+      }
+      
+      if (visited.has(obj)) {
+        return '[Circular]';
+      }
+      
+      visited.add(obj);
+      
+      if (Array.isArray(obj)) {
+        return obj.map(serializeForHash);
+      }
+      
+      const result: any = {};
+      for (const key in obj) {
+        if (key === 'parent') continue; // Skip parent references to avoid circularity
+        if (obj.hasOwnProperty(key)) {
+          result[key] = serializeForHash(obj[key]);
+        }
+      }
+      
+      visited.delete(obj);
+      return result;
+    }
+    
+    const serializable = serializeForHash(ast);
+    return JSON.stringify(serializable).substring(0, 50);
   }
 
   private buildResultFromCache(cacheKey: string): TypographyAnalysisResult {

@@ -15,7 +15,8 @@ import {
   ScopeContext,
   VariableResolutionContext,
   FontFaceDeclaration,
-  CustomPropertyDefinition
+  CustomPropertyDefinition,
+  SourceLocation
 } from './types';
 import { VariableResolver } from './variable-resolver';
 import { MediaQueryAnalyzer } from './media-query-analyzer';
@@ -114,7 +115,7 @@ export class TypographyExtractor {
       const organized = this.organizeExtractedData(entries);
 
       // Perform analysis
-      const analysis = await this.analyzer.analyze(entries);
+      const analysis = await this.analyzer.analyzeTypography(entries);
 
       const result: TypographyAnalysisResult = {
         summary: {
@@ -176,9 +177,15 @@ export class TypographyExtractor {
       // Extract and yield entries in chunks
       for await (const entry of this.streamExtractTypographyEntries(ast, variableContext, extractionOptions)) {
         yield entry;
-      }
-    } catch (error) {
-      this.addError(ExtractionErrorType.PROCESSING_ERROR, `Stream extraction failed: ${error}`, filePath);
+      }    } catch (error) {
+      const location: SourceLocation = {
+        file: filePath || 'unknown',
+        line: 0,
+        column: 0,
+        offset: 0,
+        length: 0
+      };
+      this.addError(ExtractionErrorType.PROCESSING_ERROR, `Stream extraction failed: ${error}`, location);
       throw error;
     }
   }
@@ -201,7 +208,14 @@ export class TypographyExtractor {
           if (declaration.type === 'DECLARATION') {
             const declNode = declaration as DeclarationNode;
             if (this.isTypographyProperty(declNode.property)) {
-              const entry = await this.createTypographyEntry(declNode, ruleNode, variableContext, options);
+              const entry = await this.createTypographyEntry(
+                declNode, 
+                ruleNode.selector, 
+                [], // parentSelectors - empty for direct rules
+                variableContext, 
+                [], // mediaQueryStack - empty for non-media rules
+                options
+              );
               if (entry) {
                 yield entry;
               }
@@ -582,11 +596,45 @@ export class TypographyExtractor {
   public getErrors(): ExtractionError[] {
     return [...this.errors];
   }
-
   /**
    * Clear cache
    */
   public clearCache(): void {
     this.cache.invalidate('manual');
+  }
+  /**
+   * Merge extraction options with defaults
+   */
+  private mergeOptions(options?: Partial<ExtractionOptions>): ExtractionOptions {
+    const defaultOptions: ExtractionOptions = {
+      resolveVariables: true,
+      evaluateFunctions: true,
+      computeValues: true,
+      parallel: false,
+      cacheResults: true,
+      includeContext: true,
+      includeMetadata: true
+    };
+
+    return { ...defaultOptions, ...options };
+  }
+  /**
+   * Add error to the errors collection
+   */
+  private addError(type: ExtractionErrorType, message: string, location: SourceLocation): void {
+    const error: ExtractionError = {
+      type,
+      message,
+      location,
+      recovery: {
+        recover: () => ({
+          canRecover: false,
+          recoveredValue: null,
+          strategy: 'none',
+          warnings: []
+        })
+      }
+    };
+    this.errors.push(error);
   }
 }

@@ -1,6 +1,6 @@
 
 import { TypographyEntry, ExtractionOptions, ExtractorConfiguration } from './types';
-import { ASTNode } from '../parser/ast-nodes';
+import { ASTNode, RootNode } from '../parser/ast-nodes';
 import { TypographyExtractor } from './typography-extractor';
 
 /**
@@ -18,8 +18,7 @@ export class StreamingTypographyExtractor {
 
   /**
    * Stream typography extraction from AST
-   */
-  async *streamExtraction(
+   */  async *streamExtraction(
     ast: ASTNode,
     filePath: string,
     options?: Partial<ExtractionOptions>
@@ -33,7 +32,7 @@ export class StreamingTypographyExtractor {
         options
       );
 
-      for (const entry of chunkResult.entries) {
+      for (const entry of chunkResult.typography.entries) {
         yield entry;
       }
 
@@ -52,16 +51,14 @@ export class StreamingTypographyExtractor {
     options?: Partial<ExtractionOptions>
   ): AsyncGenerator<TypographyEntry, void, unknown> {
     const chunks = this.createASTChunks(ast, this.config.chunkSize);
-    let processedChunks = 0;
-
-    for (const chunk of chunks) {
+    let processedChunks = 0;    for (const chunk of chunks) {
       const chunkResult = await this.extractor.extractTypography(
         chunk,
         filePath,
         options
       );
 
-      for (const entry of chunkResult.entries) {
+      for (const entry of chunkResult.typography.entries) {
         yield entry;
       }
 
@@ -85,8 +82,7 @@ export class StreamingTypographyExtractor {
     
     for (const chunk of chunks) {
       // Check memory usage before processing
-      if (this.getMemoryUsageMB() > maxMemoryMB) {
-        // Force garbage collection if available
+      if (this.getMemoryUsageMB() > maxMemoryMB) {      // Force garbage collection if available
         if (global.gc) {
           global.gc();
         }
@@ -101,7 +97,7 @@ export class StreamingTypographyExtractor {
         options
       );
 
-      for (const entry of chunkResult.entries) {
+      for (const entry of chunkResult.typography.entries) {
         yield entry;
       }
 
@@ -138,15 +134,13 @@ export class StreamingTypographyExtractor {
     for (const chunk of chunks) {
       if (Date.now() - startTime > timeoutMs) {
         throw new Error(`Typography extraction timeout after ${timeoutMs}ms`);
-      }
-
-      const chunkResult = await this.extractor.extractTypography(
+      }      const chunkResult = await this.extractor.extractTypography(
         chunk,
         filePath,
         options
       );
 
-      for (const entry of chunkResult.entries) {
+      for (const entry of chunkResult.typography.entries) {
         yield entry;
       }
 
@@ -200,7 +194,6 @@ export class StreamingTypographyExtractor {
       yield transform(entry);
     }
   }
-
   /**
    * Create chunks from AST for streaming processing
    */
@@ -212,10 +205,17 @@ export class StreamingTypographyExtractor {
     const chunks: ASTNode[] = [];
     for (let i = 0; i < ast.children.length; i += chunkSize) {
       const chunkChildren = ast.children.slice(i, i + chunkSize);
-      chunks.push({
-        ...ast,
-        children: chunkChildren
-      });
+      
+      // Create a new RootNode for the chunk
+      const chunkRoot = new RootNode(ast.location);
+      chunkRoot.parent = ast.parent;
+      
+      // Add the chunk children to the new root
+      for (const child of chunkChildren) {
+        chunkRoot.addChild(child);
+      }
+      
+      chunks.push(chunkRoot);
     }
 
     return chunks;

@@ -114,7 +114,7 @@ export class TypographyExtractor {
       const organized = this.organizeExtractedData(entries);
 
       // Perform analysis
-      const analysis = await this.analyzer.analyze(entries);
+      const analysis = await this.analyzer.analyzeTypography(entries);
 
       const result: TypographyAnalysisResult = {
         summary: {

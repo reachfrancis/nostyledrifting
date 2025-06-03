@@ -171,21 +171,50 @@ describe('Typography Integration Tests', () => {
       
       await expect(api.extractFromAST(invalidAST, 'invalid.scss'))
         .resolves.toBeDefined();
-    });
-
-    it('should validate typography entries', () => {
+    });    it('should validate typography entries', () => {
       const invalidEntries: TypographyEntry[] = [
         {
+          id: 'test-1',
           selector: '',
           property: 'font-size',
-          value: { original: '16px' },
+          value: { 
+            original: '16px',
+            resolved: '16px'
+          },
           context: {
-            location: { line: 1, column: 1, index: 0 },
-            parentRule: null,
-            mediaQuery: null,
-            declaration: null
+            file: 'test.scss',
+            location: { 
+              file: 'test.scss',
+              line: 1, 
+              column: 1, 
+              offset: 0,
+              length: 10,
+              context: []
+            },
+            scope: {
+              currentScope: {
+                type: 'global',
+                variables: new Map(),
+              },
+              inheritedScopes: []
+            },
+            specificity: 0,
+            parentSelectors: []
+          },
+          dependencies: {
+            variables: [],
+            mixins: [],
+            imports: [],
+            customProperties: []
+          },
+          metadata: {
+            isResponsive: false,
+            hasVariables: false,
+            hasFunctions: false,
+            isInherited: false,
+            overrides: []
           }
-        } as TypographyEntry
+        }
       ];
 
       const errors = api.validateEntries(invalidEntries);
