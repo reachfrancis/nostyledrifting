@@ -82,10 +82,6 @@ ng-style-compare --repo /path/to/angular-project --branch1 main --branch2 featur
 
 ---
 
-
-### Left off here!
-
-
 ### Story 1.3: Typography Property Extraction
 **As a** accessibility reviewer  
 **I want to** extract all typography-related properties from SCSS  
@@ -106,6 +102,11 @@ ng-style-compare --repo /path/to/angular-project --branch1 main --branch2 featur
 - Track responsive typography using media queries
 
 ---
+*********************************************
+** Left off here 06.03.2025 ** 
+** Need to fix failing tests be
+   moving on to the next story **
+*********************************************
 
 ### Story 1.4: Accessibility Property Extraction
 **As a** accessibility specialist  
