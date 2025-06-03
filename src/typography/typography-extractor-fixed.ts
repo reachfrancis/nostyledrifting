@@ -116,6 +116,9 @@ export class TypographyExtractor {
       // Perform analysis
       const analysis = await this.analyzer.analyzeTypography(entries);
 
+      console.log('Extracted Typography Entries:', entries);
+      console.log('Typography Analysis Result:', analysis);
+
       const result: TypographyAnalysisResult = {
         summary: {
           totalProperties: entries.length,
