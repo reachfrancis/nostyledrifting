@@ -365,7 +365,7 @@ export interface ExtractorConfiguration {
 export interface TypographyCache {
   variableCache: Map<string, ResolvedValue>;
   functionCache: Map<string, ComputedValue>;
-  selectorCache: Map<string, TypographyEntry[]>;
+  selectorCache: Map<string, TypographyAnalysisResult>;
   invalidate(reason: InvalidationReason): void;
 }
 

@@ -226,11 +226,10 @@ export class TypographyAPI {
     }
 
     return errors;
-  }
-  private createCache(maxSize: number): TypographyCache {
+  }  private createCache(maxSize: number): TypographyCache {
     const variableCache = new Map();
     const functionCache = new Map();
-    const selectorCache = new Map();
+    const selectorCache = new Map<string, TypographyAnalysisResult>();
     
     return {
       variableCache,
@@ -241,7 +240,7 @@ export class TypographyAPI {
         functionCache.clear();
         selectorCache.clear();
       }
-    } as TypographyCache;
+    };
   }
 
   private generateCacheKey(
@@ -287,56 +286,15 @@ export class TypographyAPI {
     const serializable = serializeForHash(ast);
     return JSON.stringify(serializable).substring(0, 50);
   }
-
   private buildResultFromCache(cacheKey: string): TypographyAnalysisResult {
-    // Implementation would retrieve from cache
-    // Placeholder for now
-    return {
-      summary: {
-        totalProperties: 0,
-        uniqueFonts: 0,
-        responsiveProperties: 0,
-        customProperties: 0,
-        fontFaceDeclarations: 0
-      },
-      typography: {
-        entries: [],
-        fontFaces: [],
-        customProperties: []
-      },
-      byProperty: new Map(),
-      bySelector: new Map(),
-      byBreakpoint: new Map(),
-      fontStacks: [],
-      consistency: {
-        fontFamilyConsistency: 1,
-        fontSizeScale: 1,
-        lineHeightConsistency: 1,
-        issues: []
-      },
-      accessibility: {
-        readability: {
-          minimumFontSize: '16px',
-          lineHeightRatio: 1.5,
-          contrastRequirements: []
-        },
-        fontAccessibility: {
-          systemFontUsage: true,
-          webFontFallbacks: true,
-          dyslexiaFriendlyFonts: []
-        },
-        responsiveAccessibility: {
-          scalableUnits: true,
-          fluidTypography: true,
-          zoomSupport: true
-        },
-        recommendations: []
-      }
-    };
+    const cachedResult = this.cache.selectorCache.get(cacheKey);
+    if (!cachedResult) {
+      throw new Error('Cache key not found');
+    }
+    return cachedResult;
   }
-
   private cacheResults(cacheKey: string, result: TypographyAnalysisResult): void {
-    this.cache.selectorCache.set(cacheKey, result.typography.entries);
+    this.cache.selectorCache.set(cacheKey, result);
   }
 
   private mergeResults(results: TypographyAnalysisResult[]): TypographyAnalysisResult {
