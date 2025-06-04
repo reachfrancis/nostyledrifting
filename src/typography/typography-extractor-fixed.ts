@@ -164,12 +164,14 @@ export class TypographyExtractor {
 
   /**
    * Build variable resolution context from AST
-   */
-  private buildVariableContext(ast: SCSSNode): VariableResolutionContext {
+   */  private buildVariableContext(ast: SCSSNode): VariableResolutionContext {
     const scssVariables = new Map();
     const customProperties = new Map();
-    const importedVariables = new Map();    // Walk AST to collect variables
-    ast.walkChildren((node) => {      if (node.type === 'variable') {
+    const importedVariables = new Map();
+    
+    // Walk AST to collect variables
+    ast.walkChildren((node) => {
+      if (node.type === 'variable') {
         // Handle SCSS Variables (VariableNode)
         const varNode = node as VariableNode;
         scssVariables.set(varNode.name, {
@@ -275,9 +277,7 @@ export class TypographyExtractor {
                await extractFromNode(child, parentSelectors);
              }
            }
-           break;
-
-         default:
+           break;         default:
            // Process children of other node types
            for (const child of node.children) {
              await extractFromNode(child, parentSelectors);
@@ -287,7 +287,9 @@ export class TypographyExtractor {
       } catch (error) {
         this.handleExtractionError(error, node);
       }
-    };    await extractFromNode(ast);
+    };
+
+    await extractFromNode(ast);
     
     // Apply property filter if specified
     if (options.propertyFilter && options.propertyFilter.length > 0) {

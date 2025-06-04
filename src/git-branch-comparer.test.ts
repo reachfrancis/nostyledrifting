@@ -31,12 +31,11 @@ describe('GitBranchComparer', () => {
     });
   });
 
-  describe('branch comparison', () => {
-    it('should successfully compare two existing branches', async () => {
-      const result = await comparer.compare('main', 'dev');
+  describe('branch comparison', () => {    it('should successfully compare two existing branches', async () => {
+      const result = await comparer.compare('dev', 'qa');
       
-      expect(result.branch1.name).toBe('main');
-      expect(result.branch2.name).toBe('dev');
+      expect(result.branch1.name).toBe('dev');
+      expect(result.branch2.name).toBe('qa');
       expect(result.branch1.path).toBeTruthy();
       expect(result.branch2.path).toBeTruthy();
       expect(result.branch1.commit).toBeTruthy();
@@ -48,12 +47,11 @@ describe('GitBranchComparer', () => {
       
       // Verify some basic files are copied
       expect(fs.existsSync(path.join(result.branch1.path, 'package.json'))).toBe(true);
-      expect(fs.existsSync(path.join(result.branch2.path, 'package.json'))).toBe(true);
-    }, 30000); // 30 second timeout for git operations
+      expect(fs.existsSync(path.join(result.branch2.path, 'package.json'))).toBe(true);    }, 30000); // 30 second timeout for git operations
 
     it('should preserve temp directories when keepTemp is true', async () => {
       const keepTempComparer = new GitBranchComparer({ keepTemp: true, verbose: false });
-      const result = await keepTempComparer.compare('main', 'dev');
+      const result = await keepTempComparer.compare('dev', 'qa');
       
       // Verify directories still exist
       expect(fs.existsSync(result.branch1.path)).toBe(true);
