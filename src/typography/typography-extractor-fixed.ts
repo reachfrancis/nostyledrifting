@@ -287,9 +287,13 @@ export class TypographyExtractor {
       } catch (error) {
         this.handleExtractionError(error, node);
       }
-    };
-
-    await extractFromNode(ast);
+    };    await extractFromNode(ast);
+    
+    // Apply property filter if specified
+    if (options.propertyFilter && options.propertyFilter.length > 0) {
+      return entries.filter(entry => options.propertyFilter!.includes(entry.property));
+    }
+    
     return entries;
   }
 
