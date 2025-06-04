@@ -1,7 +1,7 @@
 
 import { TypographyEntry, ExtractionOptions, ExtractorConfiguration } from './types';
 import { ASTNode, RootNode } from '../parser/ast-nodes';
-import { TypographyExtractor } from './typography-extractor';
+import { TypographyExtractor } from './typography-extractor-fixed';
 
 /**
  * Streaming Typography Extractor
