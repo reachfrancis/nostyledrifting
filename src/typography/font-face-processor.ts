@@ -39,9 +39,7 @@ export class FontFaceProcessor {
       const loading = {
         strategy: 'auto',
         priority: 0
-      };
-
-      // Process declarations within @font-face
+      };      // Process declarations within @font-face
       for (const child of atRuleNode.children) {
         if (child.type === 'declaration') {
           const declNode = child as DeclarationNode;
@@ -82,6 +80,51 @@ export class FontFaceProcessor {
             case 'font-display':
               descriptors.display = declNode.value as any;
               break;
+          }
+        } else if (child.type === 'block') {
+          // Handle declarations inside block node
+          for (const blockChild of child.children) {
+            if (blockChild.type === 'declaration') {
+              const declNode = blockChild as DeclarationNode;
+              
+              switch (declNode.property) {
+                case 'font-family':
+                  fontFamily = this.cleanFontFamilyValue(declNode.value);
+                  break;
+                  
+                case 'src':
+                  sources.push(...this.parseFontSources(declNode.value));
+                  break;
+                  
+                case 'font-weight':
+                  descriptors.weight = declNode.value;
+                  break;
+                  
+                case 'font-style':
+                  descriptors.style = declNode.value;
+                  break;
+                  
+                case 'font-stretch':
+                  descriptors.stretch = declNode.value;
+                  break;
+                  
+                case 'unicode-range':
+                  descriptors.unicodeRange = this.parseUnicodeRange(declNode.value);
+                  break;
+                  
+                case 'font-feature-settings':
+                  descriptors.featureSettings = declNode.value;
+                  break;
+                  
+                case 'font-variation-settings':
+                  descriptors.variationSettings = declNode.value;
+                  break;
+                  
+                case 'font-display':
+                  descriptors.display = declNode.value as any;
+                  break;
+              }
+            }
           }
         }
       }

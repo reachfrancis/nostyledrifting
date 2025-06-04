@@ -1,4 +1,4 @@
-import { SCSSNode, RuleNode, DeclarationNode, AtRuleNode } from '../parser/ast-nodes';
+import { SCSSNode, RuleNode, DeclarationNode, AtRuleNode, VariableNode } from '../parser/ast-nodes';
 import {
   TypographyProperty,
   TypographyEntry,
@@ -168,23 +168,19 @@ export class TypographyExtractor {
   private buildVariableContext(ast: SCSSNode): VariableResolutionContext {
     const scssVariables = new Map();
     const customProperties = new Map();
-    const importedVariables = new Map();
-
-    // Walk AST to collect variables
-    ast.walkChildren((node) => {
-      if (node.type === 'declaration') {
+    const importedVariables = new Map();    // Walk AST to collect variables
+    ast.walkChildren((node) => {      if (node.type === 'variable') {
+        // Handle SCSS Variables (VariableNode)
+        const varNode = node as VariableNode;
+        scssVariables.set(varNode.name, {
+          name: varNode.name,
+          value: varNode.value,
+          scope: 'global',
+          isDefault: varNode.isDefault || false,
+          location: varNode.location
+        });
+      } else if (node.type === 'declaration') {
         const declNode = node as DeclarationNode;
-        
-        // SCSS Variables
-        if (declNode.property.startsWith('$')) {
-          scssVariables.set(declNode.property, {
-            name: declNode.property,
-            value: declNode.value,
-            scope: 'global',
-            isDefault: false,
-            location: declNode.location
-          });
-        }
         
         // CSS Custom Properties
         if (declNode.property.startsWith('--')) {
