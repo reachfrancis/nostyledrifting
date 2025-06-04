@@ -451,7 +451,6 @@ export class TypographyAnalyzer {
 
     return hasSystemFonts;
   }
-
   /**
    * Analyze web font fallbacks
    */
@@ -460,6 +459,15 @@ export class TypographyAnalyzer {
     recommendations: AccessibilityRecommendation[]
   ): boolean {
     const fontFamilyEntries = entries.filter(e => e.property === 'font-family');
+    
+    // Check if any entries are from @font-face declarations (empty selector indicates @font-face context)
+    const hasFontFaceDeclarations = fontFamilyEntries.some(entry => entry.selector === '');
+    
+    // If we have @font-face declarations, consider web font fallbacks as properly handled
+    if (hasFontFaceDeclarations) {
+      return true;
+    }
+    
     let hasProperFallbacks = true;
 
     for (const entry of fontFamilyEntries) {
