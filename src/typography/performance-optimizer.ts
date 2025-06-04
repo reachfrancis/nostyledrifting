@@ -72,7 +72,15 @@ export class PerformanceOptimizer {
    * Get cached result if available
    */
   getCachedResult(cacheKey: string): TypographyEntry[] | null {
-    return this.cache.selectorCache.get(cacheKey) || null;
+    const cachedResult = this.cache.selectorCache.get(cacheKey);
+    if (cachedResult && Array.isArray(cachedResult)) {
+      return cachedResult;
+    }
+    // If cached result is a TypographyAnalysisResult, extract the entries
+    if (cachedResult && typeof cachedResult === 'object' && 'entries' in cachedResult) {
+      return (cachedResult as any).entries || null;
+    }
+    return null;
   }
 
   /**
