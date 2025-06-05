@@ -122,9 +122,7 @@ export class TypographyExtractor {
       const analysis = await this.analyzer.analyzeTypography(entries);
 
       console.log('Extracted Typography Entries:', entries);
-      console.log('Typography Analysis Result:', analysis);
-
-      const result: TypographyAnalysisResult = {
+      console.log('Typography Analysis Result:', analysis);      const result: TypographyAnalysisResult = {
         summary: {
           totalProperties: entries.length,
           uniqueFonts: this.countUniqueFonts(entries),
@@ -142,10 +140,9 @@ export class TypographyExtractor {
         byBreakpoint: organized.byBreakpoint,
         fontStacks: analysis.fontStacks,
         consistency: analysis.consistency,
-        accessibility: analysis.accessibility
-      };
-
-      const duration = Date.now() - startTime;
+        accessibility: analysis.accessibility,
+        responsiveness: analysis.responsiveness
+      };      const duration = Date.now() - startTime;
       console.log(`Typography extraction completed in ${duration}ms`);
       return result;
     } catch (error: unknown) {
@@ -640,44 +637,108 @@ export class TypographyExtractor {
     };
   }
 
+  /**
+   * Enhanced error handling for typography extraction
+   */
   private handleExtractionError(error: unknown, node: SCSSNode): void {
     const extractionError: ExtractionError = {
-      type: ExtractionErrorType.UNSUPPORTED_SYNTAX,
-      message: error instanceof Error ? error.message : 'Unknown extraction error',
+      type: this.categorizeError(error),
+      message: `Error processing ${node.type} node: ${error instanceof Error ? error.message : String(error)}`,
       location: node.location,
       recovery: {
-        recover: () => ({
-          canRecover: false,
-          recoveredValue: null,
-          strategy: 'skip',
-          warnings: [`Skipped node due to error: ${error instanceof Error ? error.message : 'Unknown error'}`]
-        })
+        recover: () => this.attemptErrorRecovery(error, node)
       }
     };
     
     this.errors.push(extractionError);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.warn(`Extraction error at ${node.location.file}:${node.location.line} - ${errorMessage}`);
+    
+    // Log detailed error information for debugging
+    if (this.config.enableDebugLogging) {
+      console.warn(`Typography extraction error at ${node.location.file}:${node.location.line}:${node.location.column}`, {
+        error: extractionError,
+        nodeType: node.type,
+        nodeContent: this.getNodeContent(node)
+      });
+    }
   }
 
   /**
-   * Configuration methods
+   * Categorize errors for better error handling
    */
-  public configure(config: Partial<ExtractorConfiguration>): void {
-    this.config = { ...this.config, ...config };
+  private categorizeError(error: unknown): ExtractionErrorType {
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        return ExtractionErrorType.TIMEOUT;
+      }
+      if (error.message.includes('memory') || error.message.includes('heap')) {
+        return ExtractionErrorType.MEMORY_LIMIT;
+      }
+      if (error.message.includes('syntax') || error.message.includes('parse')) {
+        return ExtractionErrorType.UNSUPPORTED_SYNTAX;
+      }
+      if (error.message.includes('variable') || error.message.includes('resolve')) {
+        return ExtractionErrorType.VARIABLE_RESOLUTION;
+      }
+    }
+    return ExtractionErrorType.UNSUPPORTED_SYNTAX;
   }
 
   /**
-   * Get extraction errors
+   * Attempt to recover from extraction errors
    */
-  public getErrors(): ExtractionError[] {
-    return [...this.errors];
+  private attemptErrorRecovery(error: unknown, node: SCSSNode) {
+    const errorType = this.categorizeError(error);
+    
+    switch (errorType) {
+      case ExtractionErrorType.VARIABLE_RESOLUTION:
+        return {
+          canRecover: true,
+          recoveredValue: 'inherit',
+          strategy: 'fallback' as const,
+          warnings: ['Used fallback value due to variable resolution error']
+        };
+        
+      case ExtractionErrorType.TIMEOUT:
+        return {
+          canRecover: true,
+          recoveredValue: null,
+          strategy: 'skip' as const,
+          warnings: ['Skipped extraction due to timeout']
+        };
+        
+      case ExtractionErrorType.MEMORY_LIMIT:
+        return {
+          canRecover: true,
+          recoveredValue: null,
+          strategy: 'skip' as const,
+          warnings: ['Skipped extraction due to memory limit']
+        };
+        
+      default:
+        return {
+          canRecover: false,
+          recoveredValue: null,
+          strategy: 'skip' as const,
+          warnings: [`Unrecoverable error: ${error instanceof Error ? error.message : String(error)}`]
+        };
+    }
   }
-
   /**
-   * Clear cache
+   * Get node content for debugging
    */
-  public clearCache(): void {
-    this.cache.invalidate('manual');
+  private getNodeContent(node: SCSSNode): string {
+    try {
+      if (node.type === 'declaration') {
+        const declNode = node as DeclarationNode;
+        return `${declNode.property}: ${declNode.value}`;
+      }
+      if (node.type === 'rule') {
+        const ruleNode = node as RuleNode;
+        return `selector: ${ruleNode.selector}`;
+      }
+      return `${node.type} node`;
+    } catch {
+      return 'unknown content';
+    }
   }
 }

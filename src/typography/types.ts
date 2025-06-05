@@ -358,6 +358,7 @@ export interface ExtractorConfiguration {
   timeoutMs: number;
   enableStreaming: boolean;
   chunkSize: number;
+  enableDebugLogging: boolean;
 }
 
 /**
@@ -386,7 +387,10 @@ export enum ExtractionErrorType {
   FUNCTION_EVALUATION_ERROR = 'FUNCTION_EVALUATION_ERROR',
   MALFORMED_FONT_FACE = 'MALFORMED_FONT_FACE',
   UNSUPPORTED_SYNTAX = 'UNSUPPORTED_SYNTAX',
-  PROCESSING_ERROR = 'PROCESSING_ERROR'
+  PROCESSING_ERROR = 'PROCESSING_ERROR',
+  TIMEOUT = 'TIMEOUT',
+  MEMORY_LIMIT = 'MEMORY_LIMIT',
+  VARIABLE_RESOLUTION = 'VARIABLE_RESOLUTION'
 }
 
 export interface ExtractionError {

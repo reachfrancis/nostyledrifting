@@ -24,13 +24,13 @@ export class TypographyAPI {
   private extractor: TypographyExtractor;
   private analyzer: TypographyAnalyzer;
   private cache: TypographyCache;
-
   constructor(config?: Partial<ExtractorConfiguration>) {
     const defaultConfig: ExtractorConfiguration = {
       maxCacheSize: 1000,
       timeoutMs: 30000,
       enableStreaming: true,
       chunkSize: 100,
+      enableDebugLogging: false,
       ...config
     };
 
@@ -92,13 +92,13 @@ export class TypographyAPI {
       includeMetadata: true,
       ...options
     };
-    
-    // Use streaming extractor for memory-efficient processing
+      // Use streaming extractor for memory-efficient processing
     const streamingExtractor = new StreamingTypographyExtractor({
       maxCacheSize: 1000,
       timeoutMs: 30000,
       enableStreaming: true,
-      chunkSize: 100
+      chunkSize: 100,
+      enableDebugLogging: false
     });
     
     yield* streamingExtractor.streamExtraction(ast, filePath, fullOptions);
@@ -320,8 +320,7 @@ export class TypographyAPI {
         fontSizeScale: 1,
         lineHeightConsistency: 1,
         issues: []
-      },
-      accessibility: {
+      },        accessibility: {
         readability: {
           minimumFontSize: '16px',
           lineHeightRatio: 1.5,
@@ -338,6 +337,11 @@ export class TypographyAPI {
           zoomSupport: true
         },
         recommendations: []
+      },      responsiveness: {
+        breakpointCoverage: 0,
+        fluidTypographyUsage: 0,
+        responsiveProperties: [],
+        gaps: []
       }
     };
 
