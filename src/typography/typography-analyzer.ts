@@ -37,6 +37,7 @@ export class TypographyAnalyzer {
     const fontStacks = this.analyzeFontStacks(entries);
     const consistency = this.analyzeConsistency(entries);
     const accessibility = this.analyzeAccessibility(entries);
+    const responsiveness = this.analyzeResponsiveness(entries);
     
     return {
       summary: this.generateSummary(entries),
@@ -50,7 +51,8 @@ export class TypographyAnalyzer {
       byBreakpoint,
       fontStacks,
       consistency,
-      accessibility
+      accessibility,
+      responsiveness
     };
   }
 
@@ -596,6 +598,107 @@ export class TypographyAnalyzer {
     }
 
     return zoomSupport;
+  }
+  /**
+   * Analyze responsive typography patterns
+   */
+  analyzeResponsiveness(entries: TypographyEntry[]): ResponsivenessReport {
+    const responsiveEntries = entries.filter(e => e.metadata.isResponsive);
+    const gaps: ResponsiveGap[] = [];
+    
+    const propertyBreakpoints = this.groupByPropertyAndBreakpoint(responsiveEntries);
+    
+    // Check for missing responsive coverage
+    for (const [property, breakpointMap] of propertyBreakpoints) {
+      const breakpoints = Array.from(breakpointMap.keys()).sort();
+      const commonBreakpoints = ['mobile', 'tablet', 'desktop'];
+      const missingBreakpoints = commonBreakpoints.filter(bp => !breakpoints.includes(bp));
+      
+      if (missingBreakpoints.length > 0) {
+        gaps.push({
+          property: property as TypographyProperty,
+          missingBreakpoints,
+          recommendation: `Consider adding responsive values for ${property} at ${missingBreakpoints.join(', ')} breakpoints`
+        });
+      }
+    }
+    
+    const breakpointCoverage = this.calculateResponsiveCoverage(entries);
+    const fluidTypographyUsage = this.detectFluidTypography(entries);
+    const responsiveProperties = responsiveEntries.map(e => e.property);
+    
+    return {
+      breakpointCoverage,
+      fluidTypographyUsage,
+      responsiveProperties,
+      gaps
+    };
+  }
+
+  /**
+   * Group entries by property and breakpoint
+   */
+  private groupByPropertyAndBreakpoint(entries: TypographyEntry[]): Map<string, Map<string, TypographyEntry[]>> {
+    const propertyBreakpoints = new Map<string, Map<string, TypographyEntry[]>>();
+    
+    for (const entry of entries) {
+      const property = entry.property;
+      const breakpoint = entry.context.mediaQuery?.breakpoint.type || 'base';
+      
+      if (!propertyBreakpoints.has(property)) {
+        propertyBreakpoints.set(property, new Map());
+      }
+      
+      const breakpointMap = propertyBreakpoints.get(property)!;
+      if (!breakpointMap.has(breakpoint)) {
+        breakpointMap.set(breakpoint, []);
+      }
+      
+      breakpointMap.get(breakpoint)!.push(entry);
+    }
+    
+    return propertyBreakpoints;
+  }
+
+  /**
+   * Calculate responsive coverage percentage
+   */
+  private calculateResponsiveCoverage(entries: TypographyEntry[]): number {
+    const totalProperties = entries.length;
+    const responsiveProperties = entries.filter(e => e.metadata.isResponsive).length;
+    
+    return totalProperties > 0 ? (responsiveProperties / totalProperties) * 100 : 0;
+  }
+
+  /**
+   * Detect fluid typography usage
+   */
+  private detectFluidTypography(entries: TypographyEntry[]): number {
+    const fluidEntries = entries.filter(entry => {
+      const value = entry.value.resolved;
+      return /clamp\(|min\(|max\(|calc\(.*vw/.test(value);
+    });
+    
+    return entries.length > 0 ? (fluidEntries.length / entries.length) * 100 : 0;
+  }
+
+  /**
+   * Analyze breakpoint consistency
+   */
+  private analyzeBreakpointConsistency(entries: TypographyEntry[]): number {
+    const breakpoints = new Set<string>();
+    
+    for (const entry of entries) {
+      if (entry.context.mediaQuery) {
+        breakpoints.add(entry.context.mediaQuery.breakpoint.type);
+      }
+    }
+    
+    // Score based on standard breakpoint usage
+    const standardBreakpoints = ['mobile', 'tablet', 'desktop'];
+    const matchCount = standardBreakpoints.filter(bp => breakpoints.has(bp)).length;
+    
+    return (matchCount / standardBreakpoints.length) * 100;
   }
 
   /**

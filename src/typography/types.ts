@@ -335,6 +335,7 @@ export interface TypographyAnalysisResult {
   fontStacks: FontStackAnalysis[];
   consistency: ConsistencyReport;
   accessibility: AccessibilityInsights;
+  responsiveness: ResponsivenessReport;
 }
 
 /**

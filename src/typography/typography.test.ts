@@ -1,5 +1,4 @@
-
-import { TypographyAPI } from './index';
+import { TypographyAPI, TypographyExtractor } from './index';
 import { 
   RootNode, 
   RuleNode, 
@@ -271,6 +270,285 @@ describe('Typography Integration Tests', () => {
   });
 });
 
+describe('Advanced Typography Extraction', () => {
+  let extractor: TypographyExtractor;
+
+  beforeEach(() => {
+    extractor = new TypographyExtractor({
+      maxCacheSize: 100,
+      enableStreaming: true,
+      timeoutMs: 5000
+    });
+  });
+
+  describe('createTypographyEntries method', () => {
+    it('should handle single entry from property extractor', async () => {
+      const declNode: DeclarationNode = {
+        type: 'declaration',
+        property: 'font-family',
+        value: 'Arial, sans-serif',
+        important: false,
+        location: createMockLocation(),
+        children: [],
+        parent: null,
+        walkChildren: () => {}
+      };
+
+      const variableContext = {
+        currentScope: 'global',
+        scssVariables: new Map(),
+        customProperties: new Map(),
+        importedVariables: new Map(),
+        resolvedValues: new Map()
+      };
+
+      // Access the private method through type assertion for testing
+      const result = await (extractor as any).createTypographyEntries(
+        declNode,
+        '.component',
+        ['.component'],
+        variableContext,
+        [],
+        { resolveVariables: true, computeValues: true }
+      );
+
+      expect(result).toBeDefined();
+      if (Array.isArray(result)) {
+        expect(result).toHaveLength(1);
+        expect(result[0].property).toBe('font-family');
+      } else {
+        expect(result.property).toBe('font-family');
+      }
+    });
+
+    it('should handle multiple entries from FontShorthandExtractor', async () => {
+      const declNode: DeclarationNode = {
+        type: 'declaration',
+        property: 'font',
+        value: 'bold 16px/1.5 Arial, sans-serif',
+        important: false,
+        location: createMockLocation(),
+        children: [],
+        parent: null,
+        walkChildren: () => {}
+      };
+
+      const variableContext = {
+        currentScope: 'global',
+        scssVariables: new Map(),
+        customProperties: new Map(),
+        importedVariables: new Map(),
+        resolvedValues: new Map()
+      };
+
+      // Access the private method through type assertion for testing
+      const result = await (extractor as any).createTypographyEntries(
+        declNode,
+        '.component',
+        ['.component'],
+        variableContext,
+        [],
+        { resolveVariables: true, computeValues: true }
+      );
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      
+      if (Array.isArray(result)) {
+        // FontShorthandExtractor should create multiple entries
+        expect(result.length).toBeGreaterThan(1);
+        
+        // Check that we have expected properties
+        const properties = result.map(entry => entry.property);
+        expect(properties).toContain('font-weight');
+        expect(properties).toContain('font-size');
+        expect(properties).toContain('line-height');
+        expect(properties).toContain('font-family');
+      }
+    });
+
+    it('should fall back to legacy creation for properties without extractors', async () => {
+      const declNode: DeclarationNode = {
+        type: 'declaration',
+        property: 'text-shadow',
+        value: '1px 1px 2px rgba(0,0,0,0.5)',
+        important: false,
+        location: createMockLocation(),
+        children: [],
+        parent: null,
+        walkChildren: () => {}
+      };
+
+      const variableContext = {
+        currentScope: 'global',
+        scssVariables: new Map(),
+        customProperties: new Map(),
+        importedVariables: new Map(),
+        resolvedValues: new Map()
+      };
+
+      // Access the private method through type assertion for testing
+      const result = await (extractor as any).createTypographyEntries(
+        declNode,
+        '.component',
+        ['.component'],
+        variableContext,
+        [],
+        { resolveVariables: true, computeValues: true }
+      );
+
+      expect(result).toBeDefined();
+      if (Array.isArray(result)) {
+        expect(result).toHaveLength(1);
+        expect(result[0].property).toBe('text-shadow');
+      } else {
+        expect(result.property).toBe('text-shadow');
+      }
+    });
+  });
+
+  describe('completeTypographyEntry method', () => {
+    it('should merge partial entry with full context', async () => {
+      const partialEntry: Partial<TypographyEntry> = {
+        property: 'font-weight',
+        value: {
+          original: 'bold',
+          resolved: '700'
+        }
+      };
+
+      const declNode: DeclarationNode = {
+        type: 'declaration',
+        property: 'font',
+        value: 'bold 16px Arial',
+        important: false,
+        location: createMockLocation(),
+        children: [],
+        parent: null,
+        walkChildren: () => {}
+      };
+
+      const variableContext = {
+        currentScope: 'global',
+        scssVariables: new Map(),
+        customProperties: new Map(),
+        importedVariables: new Map(),
+        resolvedValues: new Map()
+      };
+
+      // Access the private method through type assertion for testing
+      const result = await (extractor as any).completeTypographyEntry(
+        partialEntry,
+        declNode,
+        '.component',
+        ['.component'],
+        variableContext,
+        [],
+        { resolveVariables: true, computeValues: true }
+      );
+
+      expect(result).toBeDefined();
+      expect(result.property).toBe('font-weight');
+      expect(result.value.original).toBe('bold');
+      expect(result.value.resolved).toBe('700');
+      expect(result.selector).toBe('.component');
+      expect(result.context.parentSelectors).toEqual(['.component']);
+      expect(result.id).toBeDefined();
+    });
+
+    it('should provide defaults for missing fields', async () => {
+      const partialEntry: Partial<TypographyEntry> = {
+        property: 'font-size'
+      };
+
+      const declNode: DeclarationNode = {
+        type: 'declaration',
+        property: 'font',
+        value: '16px Arial',
+        important: false,
+        location: createMockLocation(),
+        children: [],
+        parent: null,
+        walkChildren: () => {}
+      };
+
+      const variableContext = {
+        currentScope: 'global',
+        scssVariables: new Map(),
+        customProperties: new Map(),
+        importedVariables: new Map(),
+        resolvedValues: new Map()
+      };
+
+      // Access the private method through type assertion for testing
+      const result = await (extractor as any).completeTypographyEntry(
+        partialEntry,
+        declNode,
+        '.component',
+        ['.component'],
+        variableContext,
+        [],
+        { resolveVariables: true, computeValues: true }
+      );
+
+      expect(result).toBeDefined();
+      expect(result.property).toBe('font-size');
+      expect(result.value.original).toBe('16px Arial'); // Should default to declNode.value
+      expect(result.value.resolved).toBe('16px Arial');
+      expect(result.selector).toBe('.component');
+      expect(result.metadata.isResponsive).toBe(false);
+      expect(result.metadata.hasVariables).toBe(false);
+      expect(result.metadata.hasFunctions).toBe(false);
+    });
+  });
+
+  describe('FontShorthandExtractor Integration', () => {
+    it('should extract multiple properties from font shorthand', async () => {
+      const ast = createFontShorthandAST();
+      const result = await api.extractFromAST(ast, 'font-shorthand.scss');
+
+      expect(result.typography.entries.length).toBeGreaterThan(1);
+      
+      const properties = result.typography.entries.map(entry => entry.property);
+      expect(properties).toContain('font-weight');
+      expect(properties).toContain('font-size');
+      expect(properties).toContain('line-height');
+      expect(properties).toContain('font-family');
+    });
+
+    it('should handle complex font shorthand values', async () => {
+      const ast = createComplexFontShorthandAST();
+      const result = await api.extractFromAST(ast, 'complex-font.scss');
+
+      const fontWeightEntry = result.typography.entries.find(e => e.property === 'font-weight');
+      const fontSizeEntry = result.typography.entries.find(e => e.property === 'font-size');
+      const lineHeightEntry = result.typography.entries.find(e => e.property === 'line-height');
+      
+      expect(fontWeightEntry).toBeDefined();
+      expect(fontSizeEntry).toBeDefined();
+      expect(lineHeightEntry).toBeDefined();
+      
+      expect(fontWeightEntry?.value.resolved).toBe('700');
+      expect(fontSizeEntry?.value.resolved).toBe('16px');
+      expect(lineHeightEntry?.value.resolved).toBe('1.5');
+    });
+  });
+
+  describe('Array Handling in Extraction Loop', () => {
+    it('should properly flatten arrays from property extractors', async () => {
+      const ast = createMixedPropertiesAST();
+      const result = await api.extractFromAST(ast, 'mixed.scss');
+
+      // Should have entries from both regular properties and font shorthand
+      const fontFamilyEntries = result.typography.entries.filter(e => e.property === 'font-family');
+      const fontWeightEntries = result.typography.entries.filter(e => e.property === 'font-weight');
+      
+      expect(fontFamilyEntries.length).toBeGreaterThan(0);
+      expect(fontWeightEntries.length).toBeGreaterThan(0);
+    });
+  });
+});
+
 // Helper functions to create test ASTs
 function createComponentStyleAST(): ASTNode {
   const location = createMockLocation();
@@ -476,5 +754,194 @@ function createFontAccessibilityAST(): ASTNode {
   rule.addChild(block);
   root.addChild(rule);
   
+  return root;
+}
+
+// Helper functions for creating test ASTs
+function createFontShorthandAST(): SCSSNode {
+  const location = createMockLocation();
+  
+  const declaration: DeclarationNode = {
+    type: 'declaration',
+    property: 'font',
+    value: 'bold 16px/1.5 Arial, sans-serif',
+    important: false,
+    location,
+    children: [],
+    parent: null,
+    walkChildren: () => {}
+  };
+
+  const block: BlockNode = {
+    type: 'block',
+    location,
+    children: [declaration],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(declaration);
+    }
+  };
+
+  const rule: RuleNode = {
+    type: 'rule',
+    selector: '.font-shorthand',
+    location,
+    children: [block],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(block);
+      block.walkChildren(callback);
+    }
+  };
+
+  const root: RootNode = {
+    type: 'root',
+    location,
+    children: [rule],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(rule);
+      rule.walkChildren(callback);
+    }
+  };
+
+  declaration.parent = block;
+  block.parent = rule;
+  rule.parent = root;
+
+  return root;
+}
+
+function createComplexFontShorthandAST(): SCSSNode {
+  const location = createMockLocation();
+  
+  const declaration: DeclarationNode = {
+    type: 'declaration',
+    property: 'font',
+    value: 'italic small-caps bold 16px/1.5 "Helvetica Neue", Arial, sans-serif',
+    important: false,
+    location,
+    children: [],
+    parent: null,
+    walkChildren: () => {}
+  };
+
+  const block: BlockNode = {
+    type: 'block',
+    location,
+    children: [declaration],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(declaration);
+    }
+  };
+
+  const rule: RuleNode = {
+    type: 'rule',
+    selector: '.complex-font',
+    location,
+    children: [block],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(block);
+      block.walkChildren(callback);
+    }
+  };
+
+  const root: RootNode = {
+    type: 'root',
+    location,
+    children: [rule],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(rule);
+      rule.walkChildren(callback);
+    }
+  };
+
+  declaration.parent = block;
+  block.parent = rule;
+  rule.parent = root;
+
+  return root;
+}
+
+function createMixedPropertiesAST(): SCSSNode {
+  const location = createMockLocation();
+  
+  const fontDeclaration: DeclarationNode = {
+    type: 'declaration',
+    property: 'font',
+    value: 'bold 16px Arial',
+    important: false,
+    location,
+    children: [],
+    parent: null,
+    walkChildren: () => {}
+  };
+
+  const colorDeclaration: DeclarationNode = {
+    type: 'declaration',
+    property: 'color',
+    value: '#333',
+    important: false,
+    location,
+    children: [],
+    parent: null,
+    walkChildren: () => {}
+  };
+
+  const textTransformDeclaration: DeclarationNode = {
+    type: 'declaration',
+    property: 'text-transform',
+    value: 'uppercase',
+    important: false,
+    location,
+    children: [],
+    parent: null,
+    walkChildren: () => {}
+  };
+
+  const block: BlockNode = {
+    type: 'block',
+    location,
+    children: [fontDeclaration, colorDeclaration, textTransformDeclaration],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(fontDeclaration);
+      callback(colorDeclaration);
+      callback(textTransformDeclaration);
+    }
+  };
+
+  const rule: RuleNode = {
+    type: 'rule',
+    selector: '.mixed-properties',
+    location,
+    children: [block],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(block);
+      block.walkChildren(callback);
+    }
+  };
+
+  const root: RootNode = {
+    type: 'root',
+    location,
+    children: [rule],
+    parent: null,
+    walkChildren: (callback) => {
+      callback(rule);
+      rule.walkChildren(callback);
+    }
+  };
+
+  fontDeclaration.parent = block;
+  colorDeclaration.parent = block;
+  textTransformDeclaration.parent = block;
+  block.parent = rule;
+  rule.parent = root;
+
   return root;
 }
