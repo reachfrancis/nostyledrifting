@@ -29,11 +29,24 @@ import * as crypto from 'crypto';
  * Typography property map for identifying typography-related properties
  */
 const TYPOGRAPHY_PROPERTIES: Set<string> = new Set([
+  // Core font properties
   'font-family', 'font-size', 'font-weight', 'font-style', 'font-variant',
   'font-stretch', 'font', 'line-height', 'letter-spacing', 'word-spacing',
+  
+  // Text properties
   'text-transform', 'text-decoration', 'text-align', 'text-indent',
+  'text-decoration-line', 'text-decoration-style', 'text-decoration-color',
+  'text-decoration-thickness', 'text-underline-position', 'text-shadow',
+  
+  // Advanced font features
   'font-feature-settings', 'font-variant-numeric', 'font-variant-ligatures',
-  'font-kerning'
+  'font-kerning', 'font-optical-sizing', 'font-variation-settings',
+  'font-display',
+  
+  // Text layout properties
+  'white-space', 'word-break', 'overflow-wrap', 'hyphens',
+  
+  // Custom properties pattern - handled separately in extraction logic
 ]);
 
 /**

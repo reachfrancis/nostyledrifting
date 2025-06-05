@@ -32,7 +32,12 @@ const TYPOGRAPHY_PROPERTIES: Set<string> = new Set([
   'font-stretch', 'font', 'line-height', 'letter-spacing', 'word-spacing',
   'text-transform', 'text-decoration', 'text-align', 'text-indent',
   'font-feature-settings', 'font-variant-numeric', 'font-variant-ligatures',
-  'font-kerning'
+  'font-kerning',
+  // Enhanced typography properties for comprehensive coverage
+  'text-decoration-line', 'text-decoration-style', 'text-decoration-color', 'text-decoration-thickness',
+  'text-underline-position', 'text-shadow',
+  'font-optical-sizing', 'font-variation-settings', 'font-display',
+  'white-space', 'word-break', 'overflow-wrap', 'hyphens'
 ]);
 
 /**
