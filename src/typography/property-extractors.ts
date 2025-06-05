@@ -13,7 +13,7 @@ export interface PropertyExtractor {
   extract(
     declaration: DeclarationNode,
     context: VariableResolutionContext
-  ): Promise<Partial<TypographyEntry>> | Partial<TypographyEntry>;
+  ): Promise<Partial<TypographyEntry> | Partial<TypographyEntry>[]> | Partial<TypographyEntry> | Partial<TypographyEntry>[];
   
   validate(value: string): boolean;
   normalize(value: string): string;
