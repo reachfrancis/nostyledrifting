@@ -168,13 +168,14 @@ export interface TypographyEntry {
     mixins: string[];
     imports: string[];
     customProperties: string[];
-  };
-  metadata: {
+  };  metadata: {
     isResponsive: boolean;
     hasVariables: boolean;
     hasFunctions: boolean;
     isInherited: boolean;
     overrides: string[];
+    isShorthand?: boolean;
+    shorthandSource?: string;
   };
 }
 

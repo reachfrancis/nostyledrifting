@@ -290,7 +290,7 @@ describe('Advanced Typography Extraction', () => {
         important: false,
         location: createMockLocation(),
         children: [],
-        parent: null,
+        parent: undefined,
         walkChildren: () => {}
       };
 
@@ -329,7 +329,7 @@ describe('Advanced Typography Extraction', () => {
         important: false,
         location: createMockLocation(),
         children: [],
-        parent: null,
+        parent: undefined,
         walkChildren: () => {}
       };
 
@@ -375,7 +375,7 @@ describe('Advanced Typography Extraction', () => {
         important: false,
         location: createMockLocation(),
         children: [],
-        parent: null,
+        parent: undefined,
         walkChildren: () => {}
       };
 
@@ -424,7 +424,7 @@ describe('Advanced Typography Extraction', () => {
         important: false,
         location: createMockLocation(),
         children: [],
-        parent: null,
+        parent: undefined,
         walkChildren: () => {}
       };
 
@@ -468,7 +468,7 @@ describe('Advanced Typography Extraction', () => {
         important: false,
         location: createMockLocation(),
         children: [],
-        parent: null,
+        parent: undefined,
         walkChildren: () => {}
       };
 
@@ -768,7 +768,7 @@ function createFontShorthandAST(): SCSSNode {
     important: false,
     location,
     children: [],
-    parent: null,
+    parent: undefined,
     walkChildren: () => {}
   };
 
@@ -776,7 +776,7 @@ function createFontShorthandAST(): SCSSNode {
     type: 'block',
     location,
     children: [declaration],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(declaration);
     }
@@ -787,7 +787,7 @@ function createFontShorthandAST(): SCSSNode {
     selector: '.font-shorthand',
     location,
     children: [block],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(block);
       block.walkChildren(callback);
@@ -798,7 +798,7 @@ function createFontShorthandAST(): SCSSNode {
     type: 'root',
     location,
     children: [rule],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(rule);
       rule.walkChildren(callback);
@@ -822,7 +822,7 @@ function createComplexFontShorthandAST(): SCSSNode {
     important: false,
     location,
     children: [],
-    parent: null,
+    parent: undefined,
     walkChildren: () => {}
   };
 
@@ -830,7 +830,7 @@ function createComplexFontShorthandAST(): SCSSNode {
     type: 'block',
     location,
     children: [declaration],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(declaration);
     }
@@ -841,7 +841,7 @@ function createComplexFontShorthandAST(): SCSSNode {
     selector: '.complex-font',
     location,
     children: [block],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(block);
       block.walkChildren(callback);
@@ -852,7 +852,7 @@ function createComplexFontShorthandAST(): SCSSNode {
     type: 'root',
     location,
     children: [rule],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(rule);
       rule.walkChildren(callback);
@@ -876,7 +876,7 @@ function createMixedPropertiesAST(): SCSSNode {
     important: false,
     location,
     children: [],
-    parent: null,
+    parent: undefined,
     walkChildren: () => {}
   };
 
@@ -887,7 +887,7 @@ function createMixedPropertiesAST(): SCSSNode {
     important: false,
     location,
     children: [],
-    parent: null,
+    parent: undefined,
     walkChildren: () => {}
   };
 
@@ -898,7 +898,7 @@ function createMixedPropertiesAST(): SCSSNode {
     important: false,
     location,
     children: [],
-    parent: null,
+    parent: undefined,
     walkChildren: () => {}
   };
 
@@ -906,7 +906,7 @@ function createMixedPropertiesAST(): SCSSNode {
     type: 'block',
     location,
     children: [fontDeclaration, colorDeclaration, textTransformDeclaration],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(fontDeclaration);
       callback(colorDeclaration);
@@ -919,7 +919,7 @@ function createMixedPropertiesAST(): SCSSNode {
     selector: '.mixed-properties',
     location,
     children: [block],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(block);
       block.walkChildren(callback);
@@ -930,7 +930,7 @@ function createMixedPropertiesAST(): SCSSNode {
     type: 'root',
     location,
     children: [rule],
-    parent: null,
+    parent: undefined,
     walkChildren: (callback) => {
       callback(rule);
       rule.walkChildren(callback);

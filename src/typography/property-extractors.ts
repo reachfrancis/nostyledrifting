@@ -1692,10 +1692,187 @@ export class FontDisplayExtractor implements PropertyExtractor {
 }
 
 /**
+ * Font kerning extractor
+ */
+export class FontKerningExtractor implements PropertyExtractor {
+  public static readonly VALID_VALUES = ['auto', 'normal', 'none', 'inherit', 'initial', 'unset'];
+
+  public extract(
+    declaration: DeclarationNode,
+    context: VariableResolutionContext
+  ): Partial<TypographyEntry> {
+    const normalizedValue = this.normalize(declaration.value);
+    
+    return {
+      value: {
+        original: declaration.value,
+        resolved: normalizedValue
+      },
+      metadata: {
+        isResponsive: false,
+        hasVariables: this.containsVariables(declaration.value),
+        hasFunctions: false,
+        isInherited: normalizedValue === 'inherit',
+        overrides: []
+      }
+    };
+  }
+
+  public validate(value: string): boolean {
+    return FontKerningExtractor.VALID_VALUES.includes(value.trim().toLowerCase());
+  }
+
+  public normalize(value: string): string {
+    return value.trim().toLowerCase();
+  }
+
+  private containsVariables(value: string): boolean {
+    return value.includes('$') || value.includes('var(');
+  }
+}
+
+/**
+ * Font feature settings extractor
+ */
+export class FontFeatureExtractor implements PropertyExtractor {
+  public static readonly VALID_VALUES = ['normal', 'inherit', 'initial', 'unset'];
+
+  public extract(
+    declaration: DeclarationNode,
+    context: VariableResolutionContext
+  ): Partial<TypographyEntry> {
+    const normalizedValue = this.normalize(declaration.value);
+    
+    return {
+      value: {
+        original: declaration.value,
+        resolved: normalizedValue
+      },
+      metadata: {
+        isResponsive: false,
+        hasVariables: this.containsVariables(declaration.value),
+        hasFunctions: false,
+        isInherited: normalizedValue === 'inherit',
+        overrides: []
+      }
+    };
+  }
+
+  public validate(value: string): boolean {
+    const trimmedValue = value.trim().toLowerCase();
+    // Check for valid keywords
+    if (FontFeatureExtractor.VALID_VALUES.includes(trimmedValue)) {
+      return true;
+    }
+    // Check for feature tag format (e.g., "liga" 1, "kern" 0)
+    const featurePattern = /^"[a-z]{4}"\s+[01](\s*,\s*"[a-z]{4}"\s+[01])*$/;
+    return featurePattern.test(trimmedValue);
+  }
+
+  public normalize(value: string): string {
+    return value.trim();
+  }
+
+  private containsVariables(value: string): boolean {
+    return value.includes('$') || value.includes('var(');
+  }
+}
+
+/**
+ * Font variant numeric extractor
+ */
+export class FontVariantNumericExtractor implements PropertyExtractor {
+  public static readonly VALID_VALUES = [
+    'normal', 'ordinal', 'slashed-zero', 'lining-nums', 'oldstyle-nums',
+    'proportional-nums', 'tabular-nums', 'diagonal-fractions', 'stacked-fractions',
+    'inherit', 'initial', 'unset'
+  ];
+
+  public extract(
+    declaration: DeclarationNode,
+    context: VariableResolutionContext
+  ): Partial<TypographyEntry> {
+    const normalizedValue = this.normalize(declaration.value);
+    
+    return {
+      value: {
+        original: declaration.value,
+        resolved: normalizedValue
+      },
+      metadata: {
+        isResponsive: false,
+        hasVariables: this.containsVariables(declaration.value),
+        hasFunctions: false,
+        isInherited: normalizedValue === 'inherit',
+        overrides: []
+      }
+    };
+  }
+
+  public validate(value: string): boolean {
+    const values = value.trim().toLowerCase().split(/\s+/);
+    return values.every(val => FontVariantNumericExtractor.VALID_VALUES.includes(val));
+  }
+
+  public normalize(value: string): string {
+    return value.trim().toLowerCase();
+  }
+
+  private containsVariables(value: string): boolean {
+    return value.includes('$') || value.includes('var(');
+  }
+}
+
+/**
+ * Font variant ligatures extractor
+ */
+export class FontVariantLigaturesExtractor implements PropertyExtractor {
+  public static readonly VALID_VALUES = [
+    'normal', 'none', 'common-ligatures', 'no-common-ligatures',
+    'discretionary-ligatures', 'no-discretionary-ligatures',
+    'historical-ligatures', 'no-historical-ligatures',
+    'contextual', 'no-contextual', 'inherit', 'initial', 'unset'
+  ];
+
+  public extract(
+    declaration: DeclarationNode,
+    context: VariableResolutionContext
+  ): Partial<TypographyEntry> {
+    const normalizedValue = this.normalize(declaration.value);
+    
+    return {
+      value: {
+        original: declaration.value,
+        resolved: normalizedValue
+      },
+      metadata: {
+        isResponsive: false,
+        hasVariables: this.containsVariables(declaration.value),
+        hasFunctions: false,
+        isInherited: normalizedValue === 'inherit',
+        overrides: []
+      }
+    };
+  }
+
+  public validate(value: string): boolean {
+    const values = value.trim().toLowerCase().split(/\s+/);
+    return values.every(val => FontVariantLigaturesExtractor.VALID_VALUES.includes(val));
+  }
+
+  public normalize(value: string): string {
+    return value.trim().toLowerCase();
+  }
+
+  private containsVariables(value: string): boolean {
+    return value.includes('$') || value.includes('var(');
+  }
+}
+
+/**
  * White space extractor
  */
 export class WhiteSpaceExtractor implements PropertyExtractor {
-  
   private static readonly VALID_VALUES = [
     'normal', 'nowrap', 'pre', 'pre-wrap', 'pre-line', 'break-spaces',
     'inherit', 'initial', 'unset'
@@ -1739,7 +1916,6 @@ export class WhiteSpaceExtractor implements PropertyExtractor {
  * Word break extractor
  */
 export class WordBreakExtractor implements PropertyExtractor {
-  
   private static readonly VALID_VALUES = [
     'normal', 'break-all', 'keep-all', 'break-word',
     'inherit', 'initial', 'unset'
@@ -1783,7 +1959,6 @@ export class WordBreakExtractor implements PropertyExtractor {
  * Overflow wrap extractor
  */
 export class OverflowWrapExtractor implements PropertyExtractor {
-  
   private static readonly VALID_VALUES = [
     'normal', 'break-word', 'anywhere',
     'inherit', 'initial', 'unset'
@@ -1827,7 +2002,6 @@ export class OverflowWrapExtractor implements PropertyExtractor {
  * Hyphens extractor
  */
 export class HyphensExtractor implements PropertyExtractor {
-  
   private static readonly VALID_VALUES = [
     'none', 'manual', 'auto',
     'inherit', 'initial', 'unset'
