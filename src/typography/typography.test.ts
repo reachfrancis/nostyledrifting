@@ -26,6 +26,78 @@ function createMockLocation(file: string = 'test.scss', line: number = 1, column
   };
 }
 
+// Helper function to create mock declaration node
+function createMockDeclarationNode(property: string, value: string): DeclarationNode {
+  return {
+    type: 'declaration',
+    property,
+    value,
+    important: false,
+    location: createMockLocation(),
+    children: [],
+    parent: undefined,
+    walkChildren: () => {},
+    addChild: () => {},
+    removeChild: () => {},
+    findChildrenByType: () => []
+  };
+}
+
+// Helper function to create mock block node
+function createMockBlockNode(children: DeclarationNode[] = []): BlockNode {
+  return {
+    type: 'block',
+    location: createMockLocation(),
+    children,
+    parent: undefined,
+    walkChildren: (callback) => {
+      children.forEach(callback);
+    },
+    addChild: () => {},
+    removeChild: () => {},
+    findChildrenByType: () => []
+  };
+}
+
+// Helper function to create mock rule node
+function createMockRuleNode(selector: string, children: BlockNode[] = []): RuleNode {
+  return {
+    type: 'rule',
+    selector,
+    location: createMockLocation(),
+    children,
+    parent: undefined,
+    walkChildren: (callback) => {
+      children.forEach(child => {
+        callback(child);
+        child.walkChildren(callback);
+      });
+    },
+    addChild: () => {},
+    removeChild: () => {},
+    findChildrenByType: () => []
+  };
+}
+
+// Helper function to create mock root node
+function createMockRootNode(children: RuleNode[] = []): RootNode {
+  return {
+    type: 'root',
+    location: createMockLocation(),
+    children,
+    parent: undefined,
+    walkChildren: (callback) => {
+      children.forEach(child => {
+        callback(child);
+        child.walkChildren(callback);
+      });
+    },
+    addChild: () => {},
+    removeChild: () => {},
+    findChildrenByType: () => []
+  };
+}
+
 describe('Typography Integration Tests', () => {
   let api: TypographyAPI;
 
@@ -272,8 +344,14 @@ describe('Typography Integration Tests', () => {
 
 describe('Advanced Typography Extraction', () => {
   let extractor: TypographyExtractor;
+  let api: TypographyAPI;
 
-  beforeEach(() => {
+  beforeEach(() => {    api = new TypographyAPI({
+      maxCacheSize: 100,
+      timeoutMs: 5000,
+      enableStreaming: true,
+      chunkSize: 50
+    });
     extractor = new TypographyExtractor({
       maxCacheSize: 100,
       enableStreaming: true,
@@ -281,9 +359,12 @@ describe('Advanced Typography Extraction', () => {
     });
   });
 
+  afterEach(() => {
+    api.clearCache();
+  });
+
   describe('createTypographyEntries method', () => {
-    it('should handle single entry from property extractor', async () => {
-      const declNode: DeclarationNode = {
+    it('should handle single entry from property extractor', async () => {      const declNode: DeclarationNode = {
         type: 'declaration',
         property: 'font-family',
         value: 'Arial, sans-serif',
@@ -291,7 +372,10 @@ describe('Advanced Typography Extraction', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => {},
+        addChild: () => {},
+        removeChild: () => {},
+        findChildrenByType: () => []
       };
 
       const variableContext = {
@@ -321,17 +405,7 @@ describe('Advanced Typography Extraction', () => {
       }
     });
 
-    it('should handle multiple entries from FontShorthandExtractor', async () => {
-      const declNode: DeclarationNode = {
-        type: 'declaration',
-        property: 'font',
-        value: 'bold 16px/1.5 Arial, sans-serif',
-        important: false,
-        location: createMockLocation(),
-        children: [],
-        parent: undefined,
-        walkChildren: () => {}
-      };
+    it('should handle multiple entries from FontShorthandExtractor', async () => {      const declNode: DeclarationNode = createMockDeclarationNode('font', 'bold 16px/1.5 Arial, sans-serif');
 
       const variableContext = {
         currentScope: 'global',
@@ -367,17 +441,7 @@ describe('Advanced Typography Extraction', () => {
       }
     });
 
-    it('should fall back to legacy creation for properties without extractors', async () => {
-      const declNode: DeclarationNode = {
-        type: 'declaration',
-        property: 'text-shadow',
-        value: '1px 1px 2px rgba(0,0,0,0.5)',
-        important: false,
-        location: createMockLocation(),
-        children: [],
-        parent: undefined,
-        walkChildren: () => {}
-      };
+    it('should fall back to legacy creation for properties without extractors', async () => {      const declNode: DeclarationNode = createMockDeclarationNode('text-shadow', '1px 1px 2px rgba(0,0,0,0.5)');
 
       const variableContext = {
         currentScope: 'global',
@@ -415,18 +479,7 @@ describe('Advanced Typography Extraction', () => {
           original: 'bold',
           resolved: '700'
         }
-      };
-
-      const declNode: DeclarationNode = {
-        type: 'declaration',
-        property: 'font',
-        value: 'bold 16px Arial',
-        important: false,
-        location: createMockLocation(),
-        children: [],
-        parent: undefined,
-        walkChildren: () => {}
-      };
+      };      const declNode: DeclarationNode = createMockDeclarationNode('font', 'bold 16px Arial');
 
       const variableContext = {
         currentScope: 'global',
@@ -509,7 +562,7 @@ describe('Advanced Typography Extraction', () => {
 
       expect(result.typography.entries.length).toBeGreaterThan(1);
       
-      const properties = result.typography.entries.map(entry => entry.property);
+      const properties = result.typography.entries.map((entry: TypographyEntry) => entry.property);
       expect(properties).toContain('font-weight');
       expect(properties).toContain('font-size');
       expect(properties).toContain('line-height');
@@ -520,9 +573,9 @@ describe('Advanced Typography Extraction', () => {
       const ast = createComplexFontShorthandAST();
       const result = await api.extractFromAST(ast, 'complex-font.scss');
 
-      const fontWeightEntry = result.typography.entries.find(e => e.property === 'font-weight');
-      const fontSizeEntry = result.typography.entries.find(e => e.property === 'font-size');
-      const lineHeightEntry = result.typography.entries.find(e => e.property === 'line-height');
+      const fontWeightEntry = result.typography.entries.find((e: TypographyEntry) => e.property === 'font-weight');
+      const fontSizeEntry = result.typography.entries.find((e: TypographyEntry) => e.property === 'font-size');
+      const lineHeightEntry = result.typography.entries.find((e: TypographyEntry) => e.property === 'line-height');
       
       expect(fontWeightEntry).toBeDefined();
       expect(fontSizeEntry).toBeDefined();
@@ -540,8 +593,8 @@ describe('Advanced Typography Extraction', () => {
       const result = await api.extractFromAST(ast, 'mixed.scss');
 
       // Should have entries from both regular properties and font shorthand
-      const fontFamilyEntries = result.typography.entries.filter(e => e.property === 'font-family');
-      const fontWeightEntries = result.typography.entries.filter(e => e.property === 'font-weight');
+      const fontFamilyEntries = result.typography.entries.filter((e: TypographyEntry) => e.property === 'font-family');
+      const fontWeightEntries = result.typography.entries.filter((e: TypographyEntry) => e.property === 'font-weight');
       
       expect(fontFamilyEntries.length).toBeGreaterThan(0);
       expect(fontWeightEntries.length).toBeGreaterThan(0);
@@ -761,49 +814,10 @@ function createFontAccessibilityAST(): ASTNode {
 function createFontShorthandAST(): SCSSNode {
   const location = createMockLocation();
   
-  const declaration: DeclarationNode = {
-    type: 'declaration',
-    property: 'font',
-    value: 'bold 16px/1.5 Arial, sans-serif',
-    important: false,
-    location,
-    children: [],
-    parent: undefined,
-    walkChildren: () => {}
-  };
-
-  const block: BlockNode = {
-    type: 'block',
-    location,
-    children: [declaration],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(declaration);
-    }
-  };
-
-  const rule: RuleNode = {
-    type: 'rule',
-    selector: '.font-shorthand',
-    location,
-    children: [block],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(block);
-      block.walkChildren(callback);
-    }
-  };
-
-  const root: RootNode = {
-    type: 'root',
-    location,
-    children: [rule],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(rule);
-      rule.walkChildren(callback);
-    }
-  };
+  const declaration = createMockDeclarationNode('font', 'bold 16px/1.5 Arial, sans-serif');
+  const block = createMockBlockNode([declaration]);
+  const rule = createMockRuleNode('.font-shorthand', [block]);
+  const root = createMockRootNode([rule]);
 
   declaration.parent = block;
   block.parent = rule;
@@ -815,49 +829,10 @@ function createFontShorthandAST(): SCSSNode {
 function createComplexFontShorthandAST(): SCSSNode {
   const location = createMockLocation();
   
-  const declaration: DeclarationNode = {
-    type: 'declaration',
-    property: 'font',
-    value: 'italic small-caps bold 16px/1.5 "Helvetica Neue", Arial, sans-serif',
-    important: false,
-    location,
-    children: [],
-    parent: undefined,
-    walkChildren: () => {}
-  };
-
-  const block: BlockNode = {
-    type: 'block',
-    location,
-    children: [declaration],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(declaration);
-    }
-  };
-
-  const rule: RuleNode = {
-    type: 'rule',
-    selector: '.complex-font',
-    location,
-    children: [block],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(block);
-      block.walkChildren(callback);
-    }
-  };
-
-  const root: RootNode = {
-    type: 'root',
-    location,
-    children: [rule],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(rule);
-      rule.walkChildren(callback);
-    }
-  };
+  const declaration = createMockDeclarationNode('font', 'italic small-caps bold 16px/1.5 "Helvetica Neue", Arial, sans-serif');
+  const block = createMockBlockNode([declaration]);
+  const rule = createMockRuleNode('.complex-font', [block]);
+  const root = createMockRootNode([rule]);
 
   declaration.parent = block;
   block.parent = rule;
@@ -869,73 +844,13 @@ function createComplexFontShorthandAST(): SCSSNode {
 function createMixedPropertiesAST(): SCSSNode {
   const location = createMockLocation();
   
-  const fontDeclaration: DeclarationNode = {
-    type: 'declaration',
-    property: 'font',
-    value: 'bold 16px Arial',
-    important: false,
-    location,
-    children: [],
-    parent: undefined,
-    walkChildren: () => {}
-  };
+  const fontDeclaration = createMockDeclarationNode('font', 'bold 16px Arial');
+  const colorDeclaration = createMockDeclarationNode('color', '#333');
+  const textTransformDeclaration = createMockDeclarationNode('text-transform', 'uppercase');
 
-  const colorDeclaration: DeclarationNode = {
-    type: 'declaration',
-    property: 'color',
-    value: '#333',
-    important: false,
-    location,
-    children: [],
-    parent: undefined,
-    walkChildren: () => {}
-  };
-
-  const textTransformDeclaration: DeclarationNode = {
-    type: 'declaration',
-    property: 'text-transform',
-    value: 'uppercase',
-    important: false,
-    location,
-    children: [],
-    parent: undefined,
-    walkChildren: () => {}
-  };
-
-  const block: BlockNode = {
-    type: 'block',
-    location,
-    children: [fontDeclaration, colorDeclaration, textTransformDeclaration],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(fontDeclaration);
-      callback(colorDeclaration);
-      callback(textTransformDeclaration);
-    }
-  };
-
-  const rule: RuleNode = {
-    type: 'rule',
-    selector: '.mixed-properties',
-    location,
-    children: [block],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(block);
-      block.walkChildren(callback);
-    }
-  };
-
-  const root: RootNode = {
-    type: 'root',
-    location,
-    children: [rule],
-    parent: undefined,
-    walkChildren: (callback) => {
-      callback(rule);
-      rule.walkChildren(callback);
-    }
-  };
+  const block = createMockBlockNode([fontDeclaration, colorDeclaration, textTransformDeclaration]);
+  const rule = createMockRuleNode('.mixed-properties', [block]);
+  const root = createMockRootNode([rule]);
 
   fontDeclaration.parent = block;
   colorDeclaration.parent = block;
