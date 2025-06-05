@@ -107,6 +107,32 @@ ng-style-compare --repo /path/to/angular-project --branch1 main --branch2 featur
 ** Need to fix failing tests be
    moving on to the next story **
 *********************************************
+## Epic 4: Change Detection and Categorization
+
+### Story 4.1: Style Diff Engine
+**As a** code reviewer  
+**I want to** see precise differences between style versions  
+**So that** I can understand what changed
+
+**Acceptance Criteria:**
+- Generate line-by-line SCSS diffs
+- Highlight added, removed, and modified properties
+- Group related changes together
+- Show before/after values clearly
+- Maintain context around changes
+- Support unified and split diff views
+
+**Technical Notes:**
+- Implement semantic diff for CSS
+- Handle moved code blocks
+- Show computed value changes
+
+---
+
+
+
+
+***************************************************************************************************
 
 ### Story 1.4: Accessibility Property Extraction
 **As a** accessibility specialist  

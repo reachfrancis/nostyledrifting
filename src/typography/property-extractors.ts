@@ -392,6 +392,333 @@ export class CustomPropertyExtractor implements PropertyExtractor {
 }
 
 /**
+ * Font shorthand extractor for complex font property parsing
+ */
+export class FontShorthandExtractor implements PropertyExtractor {
+  
+  public extract(
+    declaration: DeclarationNode,
+    context: VariableResolutionContext
+  ): Promise<Partial<TypographyEntry>[]> {
+    const value = declaration.value.trim();
+    const parsed = this.parseShorthand(value);
+    
+    // Return multiple entries for shorthand expansion
+    const entries: Partial<TypographyEntry>[] = [];
+    
+    if (parsed.fontStyle) {
+      entries.push({
+        property: 'font-style',
+        value: {
+          original: value,
+          resolved: parsed.fontStyle
+        },
+        metadata: {
+          isResponsive: false,
+          hasVariables: this.containsVariables(value),
+          hasFunctions: this.containsFunctions(value),
+          isInherited: parsed.fontStyle === 'inherit',
+          overrides: [],
+          isShorthand: true,
+          shorthandSource: 'font'
+        }
+      });
+    }
+    
+    if (parsed.fontVariant) {
+      entries.push({
+        property: 'font-variant',
+        value: {
+          original: value,
+          resolved: parsed.fontVariant
+        },
+        metadata: {
+          isResponsive: false,
+          hasVariables: this.containsVariables(value),
+          hasFunctions: this.containsFunctions(value),
+          isInherited: parsed.fontVariant === 'inherit',
+          overrides: [],
+          isShorthand: true,
+          shorthandSource: 'font'
+        }
+      });
+    }
+    
+    if (parsed.fontWeight) {
+      entries.push({
+        property: 'font-weight',
+        value: {
+          original: value,
+          resolved: parsed.fontWeight
+        },
+        metadata: {
+          isResponsive: false,
+          hasVariables: this.containsVariables(value),
+          hasFunctions: this.containsFunctions(value),
+          isInherited: parsed.fontWeight === 'inherit',
+          overrides: [],
+          isShorthand: true,
+          shorthandSource: 'font'
+        }
+      });
+    }
+    
+    if (parsed.fontStretch) {
+      entries.push({
+        property: 'font-stretch',
+        value: {
+          original: value,
+          resolved: parsed.fontStretch
+        },
+        metadata: {
+          isResponsive: false,
+          hasVariables: this.containsVariables(value),
+          hasFunctions: this.containsFunctions(value),
+          isInherited: parsed.fontStretch === 'inherit',
+          overrides: [],
+          isShorthand: true,
+          shorthandSource: 'font'
+        }
+      });
+    }
+    
+    if (parsed.fontSize) {
+      entries.push({
+        property: 'font-size',
+        value: {
+          original: value,
+          resolved: parsed.fontSize
+        },
+        metadata: {
+          isResponsive: this.hasRelativeUnits(parsed.fontSize),
+          hasVariables: this.containsVariables(value),
+          hasFunctions: this.containsFunctions(value),
+          isInherited: parsed.fontSize === 'inherit',
+          overrides: [],
+          isShorthand: true,
+          shorthandSource: 'font'
+        }
+      });
+    }
+    
+    if (parsed.lineHeight) {
+      entries.push({
+        property: 'line-height',
+        value: {
+          original: value,
+          resolved: parsed.lineHeight
+        },
+        metadata: {
+          isResponsive: this.hasRelativeUnits(parsed.lineHeight),
+          hasVariables: this.containsVariables(value),
+          hasFunctions: this.containsFunctions(value),
+          isInherited: parsed.lineHeight === 'inherit',
+          overrides: [],
+          isShorthand: true,
+          shorthandSource: 'font'
+        }
+      });
+    }
+    
+    if (parsed.fontFamily) {
+      entries.push({
+        property: 'font-family',
+        value: {
+          original: value,
+          resolved: parsed.fontFamily
+        },
+        metadata: {
+          isResponsive: false,
+          hasVariables: this.containsVariables(value),
+          hasFunctions: this.containsFunctions(value),
+          isInherited: parsed.fontFamily === 'inherit',
+          overrides: [],
+          isShorthand: true,
+          shorthandSource: 'font'
+        }
+      });
+    }
+    
+    return Promise.resolve(entries);
+  }
+
+  public validate(value: string): boolean {
+    const trimmed = value.trim();
+    
+    // System font keywords
+    const systemFonts = [
+      'caption', 'icon', 'menu', 'message-box', 'small-caption', 'status-bar'
+    ];
+    
+    if (systemFonts.includes(trimmed.toLowerCase())) {
+      return true;
+    }
+    
+    // Global keywords
+    if (['inherit', 'initial', 'unset', 'revert'].includes(trimmed.toLowerCase())) {
+      return true;
+    }
+    
+    // Try to parse the shorthand
+    try {
+      const parsed = this.parseShorthand(trimmed);
+      return !!(parsed.fontSize && parsed.fontFamily);
+    } catch {
+      return false;
+    }
+  }
+
+  public normalize(value: string): string {
+    return value.trim();
+  }
+
+  private parseShorthand(value: string): {
+    fontStyle?: string;
+    fontVariant?: string;
+    fontWeight?: string;
+    fontStretch?: string;
+    fontSize?: string;
+    lineHeight?: string;
+    fontFamily?: string;
+  } {
+    const trimmed = value.trim();
+    
+    // Handle system font keywords
+    const systemFonts = [
+      'caption', 'icon', 'menu', 'message-box', 'small-caption', 'status-bar'
+    ];
+    
+    if (systemFonts.includes(trimmed.toLowerCase())) {
+      return { fontFamily: trimmed };
+    }
+    
+    // Handle global keywords
+    if (['inherit', 'initial', 'unset', 'revert'].includes(trimmed.toLowerCase())) {
+      return { fontFamily: trimmed };
+    }
+    
+    // Parse complex shorthand: [style] [variant] [weight] [stretch] size[/line-height] family
+    const tokens = this.tokenize(trimmed);
+    const result: any = {};
+    
+    let i = 0;
+    
+    // Optional: font-style
+    if (i < tokens.length && this.isFontStyle(tokens[i])) {
+      result.fontStyle = tokens[i];
+      i++;
+    }
+    
+    // Optional: font-variant
+    if (i < tokens.length && this.isFontVariant(tokens[i])) {
+      result.fontVariant = tokens[i];
+      i++;
+    }
+    
+    // Optional: font-weight
+    if (i < tokens.length && this.isFontWeight(tokens[i])) {
+      result.fontWeight = tokens[i];
+      i++;
+    }
+    
+    // Optional: font-stretch
+    if (i < tokens.length && this.isFontStretch(tokens[i])) {
+      result.fontStretch = tokens[i];
+      i++;
+    }
+    
+    // Required: font-size[/line-height]
+    if (i < tokens.length) {
+      const sizeToken = tokens[i];
+      if (sizeToken.includes('/')) {
+        const [fontSize, lineHeight] = sizeToken.split('/');
+        result.fontSize = fontSize.trim();
+        result.lineHeight = lineHeight.trim();
+      } else {
+        result.fontSize = sizeToken;
+      }
+      i++;
+    }
+    
+    // Required: font-family (remaining tokens)
+    if (i < tokens.length) {
+      result.fontFamily = tokens.slice(i).join(' ');
+    }
+    
+    return result;
+  }
+
+  private tokenize(value: string): string[] {
+    // Split by spaces but keep quoted strings together
+    const tokens: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let quoteChar = '';
+    
+    for (let i = 0; i < value.length; i++) {
+      const char = value[i];
+      
+      if (!inQuotes && (char === '"' || char === "'")) {
+        inQuotes = true;
+        quoteChar = char;
+        current += char;
+      } else if (inQuotes && char === quoteChar) {
+        inQuotes = false;
+        current += char;
+      } else if (!inQuotes && char === ' ') {
+        if (current.trim()) {
+          tokens.push(current.trim());
+          current = '';
+        }
+      } else {
+        current += char;
+      }
+    }
+    
+    if (current.trim()) {
+      tokens.push(current.trim());
+    }
+    
+    return tokens;
+  }
+
+  private isFontStyle(token: string): boolean {
+    return ['normal', 'italic', 'oblique'].includes(token.toLowerCase());
+  }
+
+  private isFontVariant(token: string): boolean {
+    return ['normal', 'small-caps'].includes(token.toLowerCase());
+  }
+
+  private isFontWeight(token: string): boolean {
+    const lower = token.toLowerCase();
+    return [
+      'normal', 'bold', 'bolder', 'lighter',
+      '100', '200', '300', '400', '500', '600', '700', '800', '900'
+    ].includes(lower);
+  }
+
+  private isFontStretch(token: string): boolean {
+    return [
+      'normal', 'ultra-condensed', 'extra-condensed', 'condensed', 'semi-condensed',
+      'semi-expanded', 'expanded', 'extra-expanded', 'ultra-expanded'
+    ].includes(token.toLowerCase());
+  }
+
+  private hasRelativeUnits(value: string): boolean {
+    return /em|rem|%|vw|vh|vmin|vmax/i.test(value);
+  }
+
+  private containsVariables(value: string): boolean {
+    return value.includes('$') || value.includes('var(');
+  }
+
+  private containsFunctions(value: string): boolean {
+    return /calc\(|clamp\(|min\(|max\(/i.test(value);
+  }
+}
+
+/**
  * Property extractor factory
  */
 export class PropertyExtractorFactory {
@@ -1537,196 +1864,5 @@ export class HyphensExtractor implements PropertyExtractor {
 
   private containsVariables(value: string): boolean {
     return value.includes('$') || value.includes('var(');
-  }
-}
-
-/**
- * Extracts font-kerning property for character spacing control
- */
-export class FontKerningExtractor extends BasePropertyExtractor {
-  extract(value: string, context: ExtractionContext): TypographyProperty {
-    const normalizedValue = this.normalizeValue(value);
-    
-    // Valid font-kerning values
-    const validValues = ['auto', 'normal', 'none'];
-    
-    if (!validValues.includes(normalizedValue)) {
-      return this.createProperty('font-kerning', value, context, [], [`Invalid font-kerning value: ${value}`]);
-    }
-
-    return this.createProperty('font-kerning', normalizedValue, context);
-  }
-}
-
-/**
- * Extracts font-feature-settings property for OpenType features
- */
-export class FontFeatureExtractor extends BasePropertyExtractor {
-  extract(value: string, context: ExtractionContext): TypographyProperty {
-    const normalizedValue = this.normalizeValue(value);
-    
-    if (normalizedValue === 'normal') {
-      return this.createProperty('font-feature-settings', normalizedValue, context);
-    }
-
-    // Parse font feature settings like "liga" 1, "kern" 0, etc.
-    const featurePattern = /"([a-z]{4})"\s*(?:(\d+|on|off))?/gi;
-    const features: string[] = [];
-    const warnings: string[] = [];
-    
-    let match;
-    while ((match = featurePattern.exec(normalizedValue)) !== null) {
-      const [, feature, setting = '1'] = match;
-      
-      // Validate 4-character feature tag
-      if (feature.length !== 4) {
-        warnings.push(`Invalid feature tag length: ${feature}`);
-        continue;
-      }
-      
-      // Normalize setting value
-      let normalizedSetting = setting;
-      if (setting === 'on') normalizedSetting = '1';
-      if (setting === 'off') normalizedSetting = '0';
-      
-      features.push(`"${feature}" ${normalizedSetting}`);
-    }
-
-    if (features.length === 0 && normalizedValue !== 'normal') {
-      warnings.push(`Unable to parse font-feature-settings: ${value}`);
-    }
-
-    const finalValue = features.length > 0 ? features.join(', ') : normalizedValue;
-    return this.createProperty('font-feature-settings', finalValue, context, [], warnings);
-  }
-}
-
-/**
- * Extracts font-variant-numeric property for numeric styling
- */
-export class FontVariantNumericExtractor extends BasePropertyExtractor {
-  extract(value: string, context: ExtractionContext): TypographyProperty {
-    const normalizedValue = this.normalizeValue(value);
-    
-    if (normalizedValue === 'normal') {
-      return this.createProperty('font-variant-numeric', normalizedValue, context);
-    }
-
-    // Valid font-variant-numeric values
-    const validValues = [
-      'lining-nums', 'oldstyle-nums',
-      'proportional-nums', 'tabular-nums',
-      'diagonal-fractions', 'stacked-fractions',
-      'ordinal', 'slashed-zero'
-    ];
-    
-    const values = normalizedValue.split(/\s+/);
-    const warnings: string[] = [];
-    const validatedValues: string[] = [];
-    
-    for (const val of values) {
-      if (validValues.includes(val)) {
-        validatedValues.push(val);
-      } else {
-        warnings.push(`Invalid font-variant-numeric value: ${val}`);
-      }
-    }
-
-    const finalValue = validatedValues.length > 0 ? validatedValues.join(' ') : normalizedValue;
-    return this.createProperty('font-variant-numeric', finalValue, context, [], warnings);
-  }
-}
-
-/**
- * Extracts font-variant-ligatures property for ligature control
- */
-export class FontVariantLigaturesExtractor extends BasePropertyExtractor {
-  extract(value: string, context: ExtractionContext): TypographyProperty {
-    const normalizedValue = this.normalizeValue(value);
-    
-    if (normalizedValue === 'normal' || normalizedValue === 'none') {
-      return this.createProperty('font-variant-ligatures', normalizedValue, context);
-    }
-
-    // Valid font-variant-ligatures values
-    const validValues = [
-      'common-ligatures', 'no-common-ligatures',
-      'discretionary-ligatures', 'no-discretionary-ligatures',
-      'historical-ligatures', 'no-historical-ligatures',
-      'contextual', 'no-contextual'
-    ];
-    
-    const values = normalizedValue.split(/\s+/);
-    const warnings: string[] = [];
-    const validatedValues: string[] = [];
-    
-    for (const val of values) {
-      if (validValues.includes(val)) {
-        validatedValues.push(val);
-      } else {
-        warnings.push(`Invalid font-variant-ligatures value: ${val}`);
-      }
-    }
-
-    const finalValue = validatedValues.length > 0 ? validatedValues.join(' ') : normalizedValue;
-    return this.createProperty('font-variant-ligatures', finalValue, context, [], warnings);
-  }
-}
-
-/**
- * Extracts font shorthand property with comprehensive parsing
- */
-export class FontShorthandExtractor extends BasePropertyExtractor {
-  extract(value: string, context: ExtractionContext): TypographyProperty {
-    const normalizedValue = this.normalizeValue(value);
-    const warnings: string[] = [];
-    const extractedProps: { [key: string]: string } = {};
-    
-    // Handle system fonts first
-    const systemFonts = [
-      'caption', 'icon', 'menu', 'message-box', 'small-caption', 'status-bar'
-    ];
-    
-    if (systemFonts.includes(normalizedValue)) {
-      return this.createProperty('font', normalizedValue, context, [], [], {
-        isSystemFont: true,
-        systemFontType: normalizedValue
-      });
-    }
-
-    // Parse complex font shorthand: [font-style] [font-variant] [font-weight] [font-stretch] font-size[/line-height] font-family
-    const fontPattern = /^(?:(italic|oblique|normal)\s+)?(?:(small-caps|normal)\s+)?(?:(normal|bold|bolder|lighter|\d+)\s+)?(?:(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s+)?(\d+(?:\.\d+)?(?:px|em|rem|%|pt|pc|in|cm|mm|ex|ch|vw|vh|vmin|vmax))(?:\/(\d+(?:\.\d+)?(?:px|em|rem|%|pt|pc|in|cm|mm|ex|ch|vw|vh|vmin|vmax|normal)?\s*))?\s+(.+)$/;
-
-    const match = fontPattern.exec(normalizedValue);
-    
-    if (!match) {
-      // Fallback: try to extract at least font-size and font-family
-      const simplePattern = /(\d+(?:\.\d+)?(?:px|em|rem|%|pt|pc|in|cm|mm))\s+(.+)$/;
-      const simpleMatch = simplePattern.exec(normalizedValue);
-      
-      if (simpleMatch) {
-        const [, fontSize, fontFamily] = simpleMatch;
-        extractedProps['font-size'] = fontSize;
-        extractedProps['font-family'] = fontFamily;
-        warnings.push('Partial font shorthand parsing - only size and family extracted');
-      } else {
-        warnings.push(`Unable to parse font shorthand: ${value}`);
-      }
-    } else {
-      const [, fontStyle, fontVariant, fontWeight, fontStretch, fontSize, lineHeight, fontFamily] = match;
-      
-      if (fontStyle) extractedProps['font-style'] = fontStyle;
-      if (fontVariant) extractedProps['font-variant'] = fontVariant;
-      if (fontWeight) extractedProps['font-weight'] = fontWeight;
-      if (fontStretch) extractedProps['font-stretch'] = fontStretch;
-      if (fontSize) extractedProps['font-size'] = fontSize;
-      if (lineHeight) extractedProps['line-height'] = lineHeight;
-      if (fontFamily) extractedProps['font-family'] = fontFamily;
-    }
-
-    return this.createProperty('font', normalizedValue, context, [], warnings, {
-      extractedProperties: extractedProps,
-      isShorthand: true
-    });
   }
 }
