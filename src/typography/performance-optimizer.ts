@@ -1,5 +1,4 @@
-
-import { TypographyEntry, TypographyCache, ExtractionOptions } from './types';
+import { TypographyEntry, TypographyCache, ExtractionOptions, TypographyAnalysisResult, TypographyProperty, AccessibilityInsights } from './types';
 import { ASTNode, RootNode, RuleNode, BlockNode, DeclarationNode, CommentNode } from '../parser/ast-nodes';
 
 /**
@@ -82,7 +81,6 @@ export class PerformanceOptimizer {
     }
     return null;
   }
-
   /**
    * Cache extraction result
    */
@@ -92,8 +90,10 @@ export class PerformanceOptimizer {
       this.evictLRUEntries();
     }
 
-    this.cache.selectorCache.set(cacheKey, entries);
-  }  /**
+    // Create a TypographyAnalysisResult from the entries
+    const analysisResult = this.createAnalysisResultFromEntries(entries);
+    this.cache.selectorCache.set(cacheKey, analysisResult);
+  }/**
    * Pre-process AST for common optimizations
    */
   preprocessAST(ast: ASTNode): ASTNode {
@@ -349,6 +349,101 @@ export class PerformanceOptimizer {
     }
 
     return Promise.all(results);
+  }
+
+  /**
+   * Create a TypographyAnalysisResult from entries array
+   */  private createAnalysisResultFromEntries(entries: TypographyEntry[]): TypographyAnalysisResult {
+    // Group entries by property and selector for the maps
+    const byProperty = new Map<TypographyProperty, TypographyEntry[]>();
+    const bySelector = new Map<string, TypographyEntry[]>();
+    const byBreakpoint = new Map<string, TypographyEntry[]>();
+    
+    for (const entry of entries) {
+      // Group by property
+      if (!byProperty.has(entry.property)) {
+        byProperty.set(entry.property, []);
+      }
+      byProperty.get(entry.property)!.push(entry);
+      
+      // Group by selector
+      if (!bySelector.has(entry.selector)) {
+        bySelector.set(entry.selector, []);
+      }
+      bySelector.get(entry.selector)!.push(entry);
+
+      // Group by breakpoint if media query exists
+      if (entry.context.mediaQuery) {
+        const breakpointKey = entry.context.mediaQuery.breakpoint.value;
+        if (!byBreakpoint.has(breakpointKey)) {
+          byBreakpoint.set(breakpointKey, []);
+        }
+        byBreakpoint.get(breakpointKey)!.push(entry);
+      }
+    }
+
+    // Count unique fonts
+    const uniqueFonts = new Set(
+      entries
+        .filter(e => e.property === 'font-family')
+        .map(e => e.value.resolved)
+    ).size;
+
+    // Count responsive properties (entries with media queries)
+    const responsiveProperties = entries.filter(e => e.context.mediaQuery).length;
+
+    // Count custom properties (CSS custom properties starting with --)
+    const customProperties = entries.filter(e => e.property.startsWith('--')).length;
+
+    // Create summary matching TypographyAnalysisResult interface
+    const summary = {
+      totalProperties: entries.length,
+      uniqueFonts,
+      responsiveProperties,
+      customProperties,
+      fontFaceDeclarations: 0 // No font face declarations in basic entries
+    };
+
+    // Create accessibility insights matching the interface
+    const accessibility: AccessibilityInsights = {
+      readability: {
+        minimumFontSize: '16px',
+        lineHeightRatio: 1.5,
+        contrastRequirements: []
+      },
+      fontAccessibility: {
+        systemFontUsage: false,
+        webFontFallbacks: false,
+        dyslexiaFriendlyFonts: []
+      },
+      responsiveAccessibility: {
+        scalableUnits: false,
+        fluidTypography: false,
+        zoomSupport: false
+      },
+      recommendations: []
+    };
+
+    // Create basic analysis structure
+    return {
+      summary,
+      typography: {
+        entries,
+        fontFaces: [],
+        customProperties: []
+      },
+      byProperty,
+      bySelector,
+      byBreakpoint,
+      fontStacks: [],
+      consistency: {
+        fontFamilyConsistency: 1,
+        fontSizeScale: 1,
+        lineHeightConsistency: 1,
+        issues: []
+      },
+      accessibility
+    };
   }
 }
 
