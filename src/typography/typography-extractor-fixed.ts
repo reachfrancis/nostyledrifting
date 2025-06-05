@@ -233,8 +233,7 @@ export class TypographyExtractor {
           case 'declaration': {
             const declNode = node as DeclarationNode;
             if (this.isTypographyProperty(declNode.property)) {
-              const currentSelector = parentSelectors[parentSelectors.length - 1] || '';
-              const entry = await this.createTypographyEntry(
+              const currentSelector = parentSelectors[parentSelectors.length - 1] || '';              const result = await this.createTypographyEntries(
                 declNode,
                 currentSelector,
                 parentSelectors,
@@ -242,8 +241,10 @@ export class TypographyExtractor {
                 mediaQueryStack,
                 options
               );
-              if (entry) {
-                entries.push(entry);
+              if (result) {
+                // Handle both single entries and arrays from the new PropertyExtractor interface
+                const entriesToAdd = Array.isArray(result) ? result : [result];
+                entries.push(...entriesToAdd);
               }
             }
             break;
@@ -303,11 +304,10 @@ export class TypographyExtractor {
     
     return entries;
   }
-
   /**
-   * Create typography entry from declaration node
+   * Legacy typography entry creation for backward compatibility
    */
-  private async createTypographyEntry(
+  private async createTypographyEntryLegacy(
     declNode: DeclarationNode,
     selector: string,
     parentSelectors: string[],
@@ -371,6 +371,143 @@ export class TypographyExtractor {
           hasFunctions: this.containsFunctions(originalValue),
           isInherited: false,
           overrides: []
+        }
+      };
+
+      return entry;
+
+    } catch (error) {
+      this.handleExtractionError(error, declNode);
+      return null;
+    }
+  }
+
+  /**
+   * Create typography entries from a declaration using PropertyExtractor
+   */
+  private async createTypographyEntries(
+    declNode: DeclarationNode,
+    selector: string,
+    parentSelectors: string[],
+    variableContext: VariableResolutionContext,
+    mediaQueryStack: MediaQueryContext[],
+    options: ExtractionOptions
+  ): Promise<TypographyEntry | TypographyEntry[] | null> {
+    try {
+      const property = declNode.property as TypographyProperty;
+      
+      // Use PropertyExtractor for advanced property handling
+      const extractor = this.propertyExtractorFactory.getExtractor(property);
+      if (extractor) {
+        const extractorResult = await extractor.extract(declNode, variableContext);
+        
+        // Handle both single and multiple entries from PropertyExtractor
+        const partialEntries = Array.isArray(extractorResult) ? extractorResult : [extractorResult];
+        const fullEntries: TypographyEntry[] = [];
+        
+        for (const partialEntry of partialEntries) {
+          const fullEntry = await this.completeTypographyEntry(
+            partialEntry,
+            declNode,
+            selector,
+            parentSelectors,
+            variableContext,
+            mediaQueryStack,
+            options
+          );
+          if (fullEntry) {
+            fullEntries.push(fullEntry);
+          }
+        }
+        
+        return fullEntries.length === 1 ? fullEntries[0] : fullEntries;
+      }
+      
+      // Fallback to legacy creation for properties without extractors
+      return await this.createTypographyEntryLegacy(
+        declNode,
+        selector,
+        parentSelectors,
+        variableContext,
+        mediaQueryStack,
+        options
+      );
+
+    } catch (error) {
+      this.handleExtractionError(error, declNode);
+      return null;
+    }
+  }
+
+  /**
+   * Complete a partial typography entry with full context and metadata
+   */
+  private async completeTypographyEntry(
+    partialEntry: Partial<TypographyEntry>,
+    declNode: DeclarationNode,
+    selector: string,
+    parentSelectors: string[],
+    variableContext: VariableResolutionContext,
+    mediaQueryStack: MediaQueryContext[],
+    options: ExtractionOptions
+  ): Promise<TypographyEntry | null> {
+    try {
+      const property = declNode.property as TypographyProperty;
+      const originalValue = declNode.value;
+
+      // Resolve value if needed and not already provided
+      let resolvedValue = partialEntry.value?.resolved || originalValue;
+      const dependencies: string[] = [];
+
+      if (options.resolveVariables && this.containsVariables(originalValue)) {
+        const resolved = await this.variableResolver.resolve(originalValue, variableContext);
+        resolvedValue = resolved.resolved;
+        dependencies.push(...resolved.dependencies);
+      }
+
+      // Compute value if it contains functions and not already computed
+      let computedValue: ComputedValue | undefined = partialEntry.value?.computed;
+      if (!computedValue && options.computeValues && this.containsFunctions(resolvedValue)) {
+        computedValue = await this.variableResolver.evaluateExpression(resolvedValue, variableContext);
+      }
+
+      // Generate unique ID
+      const id = partialEntry.id || this.generateEntryId(selector, property, originalValue);
+
+      // Merge with partial entry, providing defaults for missing fields
+      const entry: TypographyEntry = {
+        id,
+        selector: partialEntry.selector || selector,
+        property: partialEntry.property || property,
+        value: {
+          original: partialEntry.value?.original || originalValue,
+          resolved: partialEntry.value?.resolved || resolvedValue,
+          computed: partialEntry.value?.computed || computedValue
+        },
+        context: {
+          file: partialEntry.context?.file || declNode.location.file,
+          location: partialEntry.context?.location || declNode.location,
+          scope: partialEntry.context?.scope || {
+            currentScope: variableContext.currentScope,
+            inheritedScopes: []
+          },
+          specificity: partialEntry.context?.specificity || this.calculateSpecificity(selector),
+          mediaQuery: partialEntry.context?.mediaQuery || 
+            (mediaQueryStack.length > 0 ? mediaQueryStack[mediaQueryStack.length - 1] : undefined),
+          parentSelectors: partialEntry.context?.parentSelectors || parentSelectors
+        },
+        dependencies: {
+          variables: partialEntry.dependencies?.variables || dependencies.filter(d => d.startsWith('$')),
+          mixins: partialEntry.dependencies?.mixins || [],
+          imports: partialEntry.dependencies?.imports || [],
+          customProperties: partialEntry.dependencies?.customProperties || dependencies.filter(d => d.startsWith('--'))
+        },
+        metadata: {
+          isResponsive: partialEntry.metadata?.isResponsive ?? (mediaQueryStack.length > 0),
+          hasVariables: partialEntry.metadata?.hasVariables ?? this.containsVariables(originalValue),
+          hasFunctions: partialEntry.metadata?.hasFunctions ?? this.containsFunctions(originalValue),
+          isInherited: partialEntry.metadata?.isInherited ?? false,
+          overrides: partialEntry.metadata?.overrides || []
         }
       };
 
