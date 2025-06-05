@@ -7,12 +7,11 @@
     "nodrift": "./dist/index.js",
     "ng-style-compare": "./dist/index.js",
     "nostyledrifting": "./dist/index.js"
-  },
-  "scripts": {
+  },  "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
     "start": "node dist/index.js",
-    "test": "jest",
+    "test": "jest --watchAll=false",
     "test:watch": "jest --watch",
     "clean": "rimraf dist",
     "prepare": "npm run build"
