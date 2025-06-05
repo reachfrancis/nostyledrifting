@@ -52,13 +52,13 @@ export class TypographyExtractor {
   private analyzer: TypographyAnalyzer;
   private config: ExtractorConfiguration;
   private errors: ExtractionError[] = [];
-
   constructor(config?: Partial<ExtractorConfiguration>) {
     this.config = {
       maxCacheSize: 1000,
       timeoutMs: 30000,
       enableStreaming: true,
       chunkSize: 100,
+      enableDebugLogging: false,
       ...config
     };
 
