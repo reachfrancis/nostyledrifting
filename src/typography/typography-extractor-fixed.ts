@@ -377,7 +377,6 @@ export class TypographyExtractor {
       return null;
     }
   }
-
   /**
    * Create typography entries from a declaration using PropertyExtractor
    */
@@ -390,7 +389,14 @@ export class TypographyExtractor {
     options: ExtractionOptions
   ): Promise<TypographyEntry | TypographyEntry[] | null> {
     try {
-      const property = declNode.property as TypographyProperty;      // Use PropertyExtractor for advanced property handling
+      const property = declNode.property as TypographyProperty;
+      
+      // Check if this is a valid typography property - return null if not
+      if (!this.isTypographyProperty(property)) {
+        return null;
+      }
+      
+      // Use PropertyExtractor for advanced property handling
       const extractor = this.propertyExtractorFactory.getExtractor(property);
       if (extractor) {
         const extractorResult = await extractor.extract(declNode, variableContext);
