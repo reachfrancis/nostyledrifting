@@ -148,7 +148,8 @@ export class TypographyExtractor {
         byBreakpoint: organized.byBreakpoint,
         fontStacks: analysis.fontStacks,
         consistency: analysis.consistency,
-        accessibility: analysis.accessibility
+        accessibility: analysis.accessibility,
+        responsiveness: undefined
       };
 
       const duration = Date.now() - startTime;
