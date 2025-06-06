@@ -450,13 +450,15 @@ export class FontShorthandExtractor implements PropertyExtractor {
         }
       });
     }
-    
-    if (parsed.fontWeight) {
+      if (parsed.fontWeight) {
+      // Normalize font-weight values (bold -> 700, normal -> 400)
+      const normalizedWeight = this.normalizeFontWeight(parsed.fontWeight);
+      
       entries.push({
         property: 'font-weight',
         value: {
           original: value,
-          resolved: parsed.fontWeight
+          resolved: normalizedWeight
         },
         metadata: {
           isResponsive: false,
