@@ -17,9 +17,8 @@ module.exports = {
     '!src/**/*.spec.ts',
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  verbose: false,
-  silent: true,
+  coverageReporters: ['text', 'lcov', 'html'],  verbose: false,
+  silent: false,
   forceExit: true,
   detectOpenHandles: true,
   clearMocks: true

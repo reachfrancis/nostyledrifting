@@ -146,10 +146,32 @@ describe('Typography Integration Tests', () => {
         entry => entry.property === 'line-height'
       );
       expect(lineHeightEntry?.value.computed).toBeDefined();
-    });
-
-    it('should extract responsive typography', async () => {
+    });    it('should extract responsive typography', async () => {
       const ast = createResponsiveAST();
+      
+      // Debug: Log the AST structure first
+      console.log('DEBUG: AST structure:', JSON.stringify({
+        type: ast.type,
+        children: ast.children.map(child => ({
+          type: child.type,
+          name: (child as any).name || 'N/A',
+          params: (child as any).params || 'N/A',
+          selector: (child as any).selector || 'N/A',
+          children: child.children.map(grandChild => ({
+            type: grandChild.type,
+            selector: (grandChild as any).selector || 'N/A',
+            children: grandChild.children.map(greatGrandChild => ({
+              type: greatGrandChild.type,
+              children: greatGrandChild.children.map(ggGrandChild => ({
+                type: ggGrandChild.type,
+                property: (ggGrandChild as any).property || 'N/A',
+                value: (ggGrandChild as any).value || 'N/A'
+              }))
+            }))
+          }))
+        }))
+      }, null, 2));
+      
       const result = await api.extractFromAST(ast, 'responsive.scss');
 
       // Debug: Log the actual result structure
@@ -163,8 +185,6 @@ describe('Typography Integration Tests', () => {
         mediaQuery: e.context.mediaQuery?.breakpoint
       })), null, 2));
       console.log('DEBUG: Summary:', JSON.stringify(result.summary, null, 2));
-      console.log('DEBUG: ByBreakpoint size:', result.byBreakpoint.size);
-      console.log('DEBUG: ByBreakpoint keys:', Array.from(result.byBreakpoint.keys()));
 
       expect(result.summary.responsiveProperties).toBeGreaterThan(0);
       expect(result.byBreakpoint.size).toBeGreaterThan(0);
