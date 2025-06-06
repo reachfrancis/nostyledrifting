@@ -7,6 +7,7 @@ module.exports = {
     '^.+\\.ts$': 'ts-jest',
   },
   watchman: false,
+  watchMode: false,
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.test.ts',
