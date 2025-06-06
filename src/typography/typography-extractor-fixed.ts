@@ -392,10 +392,10 @@ export class TypographyExtractor {
   ): Promise<TypographyEntry | TypographyEntry[] | null> {
     try {
       const property = declNode.property as TypographyProperty;
-      
-      // Use PropertyExtractor for advanced property handling
+        // Use PropertyExtractor for advanced property handling
       const extractor = this.propertyExtractorFactory.getExtractor(property);
       if (extractor) {
+        console.log(`DEBUG: Using PropertyExtractor for ${property}`);
         const extractorResult = await extractor.extract(declNode, variableContext);
         
         // Handle both single and multiple entries from PropertyExtractor
@@ -403,6 +403,7 @@ export class TypographyExtractor {
         const fullEntries: TypographyEntry[] = [];
         
         for (const partialEntry of partialEntries) {
+          console.log(`DEBUG: Partial entry from PropertyExtractor:`, partialEntry.value);
           const fullEntry = await this.completeTypographyEntry(
             partialEntry,
             declNode,
@@ -412,6 +413,7 @@ export class TypographyExtractor {
             mediaQueryStack,
             options
           );
+          console.log(`DEBUG: Full entry after completion:`, fullEntry?.value);
           if (fullEntry) {
             fullEntries.push(fullEntry);
           }
@@ -450,16 +452,17 @@ export class TypographyExtractor {
   ): Promise<TypographyEntry | null> {
     try {
       const property = declNode.property as TypographyProperty;
-      const originalValue = declNode.value;
-
-      // Resolve value if needed and not already provided
-      let resolvedValue = partialEntry.value?.resolved || originalValue;
+      const originalValue = declNode.value;      // Resolve value if needed
+      let resolvedValue = originalValue;
       const dependencies: string[] = [];
 
       if (options.resolveVariables && this.containsVariables(originalValue)) {
         const resolved = await this.variableResolver.resolve(originalValue, variableContext);
         resolvedValue = resolved.resolved;
         dependencies.push(...resolved.dependencies);
+      } else {
+        // Only use the PropertyExtractor's resolved value if we're not doing variable resolution
+        resolvedValue = partialEntry.value?.resolved || originalValue;
       }
 
       // Compute value if it contains functions and not already computed
