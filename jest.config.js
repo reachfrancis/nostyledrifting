@@ -8,6 +8,9 @@ module.exports = {
   },
   watchman: false,
   watchMode: false,
+  watch: false,
+  watchAll: false,
+  watchPlugins: [],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.test.ts',
@@ -15,4 +18,9 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  verbose: false,
+  silent: true,
+  forceExit: true,
+  detectOpenHandles: true,
+  clearMocks: true
 };
