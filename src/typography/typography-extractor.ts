@@ -61,13 +61,13 @@ export class TypographyExtractor {
   private analyzer: TypographyAnalyzer;
   private config: ExtractorConfiguration;
   private errors: ExtractionError[] = [];
-
   constructor(config?: Partial<ExtractorConfiguration>) {
     this.config = {
       maxCacheSize: 1000,
       timeoutMs: 30000,
       enableStreaming: true,
       chunkSize: 100,
+      enableDebugLogging: false,
       ...config
     };
 
@@ -145,11 +145,10 @@ export class TypographyExtractor {
         },
         byProperty: organized.byProperty,
         bySelector: organized.bySelector,
-        byBreakpoint: organized.byBreakpoint,
-        fontStacks: analysis.fontStacks,
+        byBreakpoint: organized.byBreakpoint,        fontStacks: analysis.fontStacks,
         consistency: analysis.consistency,
         accessibility: analysis.accessibility,
-        responsiveness: undefined
+        responsiveness: analysis.responsiveness
       };
 
       const duration = Date.now() - startTime;

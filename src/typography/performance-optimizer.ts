@@ -435,14 +435,19 @@ export class PerformanceOptimizer {
       byProperty,
       bySelector,
       byBreakpoint,
-      fontStacks: [],
-      consistency: {
+      fontStacks: [],      consistency: {
         fontFamilyConsistency: 1,
         fontSizeScale: 1,
         lineHeightConsistency: 1,
         issues: []
       },
-      accessibility
+      accessibility,
+      responsiveness: {
+        breakpointCoverage: 0,
+        fluidTypographyUsage: 0,
+        responsiveProperties: [],
+        gaps: []
+      }
     };
   }
 }
