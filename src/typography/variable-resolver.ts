@@ -80,7 +80,6 @@ export class VariableResolver {
 
     return resolved;
   }
-
   /**
    * Resolve a single SCSS variable
    */
@@ -88,19 +87,27 @@ export class VariableResolver {
     varName: string,
     context: VariableResolutionContext
   ): Promise<string | null> {
+    // Debug logging
+    console.log(`DEBUG: Resolving variable ${varName}`);
+    console.log(`DEBUG: Current scope variables:`, [...context.currentScope.variables.keys()]);
+    console.log(`DEBUG: SCSS variables:`, [...context.scssVariables.keys()]);
+    
     // Check current scope first
     const currentScopeVar = context.currentScope.variables.get(varName);
     if (currentScopeVar) {
+      console.log(`DEBUG: Found in current scope: ${currentScopeVar}`);
       return currentScopeVar;
     }
 
     // Check global scope
     const globalVar = context.scssVariables.get(varName);
     if (globalVar) {
+      console.log(`DEBUG: Found in global SCSS variables:`, globalVar);
       this.resolving.add(varName);
       try {
         // Recursively resolve if the variable value contains other variables
         const resolved = await this.resolve(globalVar.value, context);
+        console.log(`DEBUG: Recursively resolved to:`, resolved);
         return resolved.resolved;
       } finally {
         this.resolving.delete(varName);
@@ -110,9 +117,11 @@ export class VariableResolver {
     // Check imported variables
     const importedVar = context.importedVariables.get(varName);
     if (importedVar) {
+      console.log(`DEBUG: Found in imported variables: ${importedVar.value}`);
       return importedVar.value;
     }
 
+    console.log(`DEBUG: Variable ${varName} not found anywhere`);
     return null;
   }
 
