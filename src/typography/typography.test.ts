@@ -146,45 +146,9 @@ describe('Typography Integration Tests', () => {
         entry => entry.property === 'line-height'
       );
       expect(lineHeightEntry?.value.computed).toBeDefined();
-    });    it('should extract responsive typography', async () => {
-      const ast = createResponsiveAST();
-      
-      // Debug: Log the AST structure first
-      console.log('DEBUG: AST structure:', JSON.stringify({
-        type: ast.type,
-        children: ast.children.map(child => ({
-          type: child.type,
-          name: (child as any).name || 'N/A',
-          params: (child as any).params || 'N/A',
-          selector: (child as any).selector || 'N/A',
-          children: child.children.map(grandChild => ({
-            type: grandChild.type,
-            selector: (grandChild as any).selector || 'N/A',
-            children: grandChild.children.map(greatGrandChild => ({
-              type: greatGrandChild.type,
-              children: greatGrandChild.children.map(ggGrandChild => ({
-                type: ggGrandChild.type,
-                property: (ggGrandChild as any).property || 'N/A',
-                value: (ggGrandChild as any).value || 'N/A'
-              }))
-            }))
-          }))
-        }))
-      }, null, 2));
+    });    it('should extract responsive typography', async () => {      const ast = createResponsiveAST();
       
       const result = await api.extractFromAST(ast, 'responsive.scss');
-
-      // Debug: Log the actual result structure
-      console.log('DEBUG: Typography entries:', result.typography.entries.length);
-      console.log('DEBUG: Entries:', JSON.stringify(result.typography.entries.map(e => ({
-        selector: e.selector,
-        property: e.property,
-        value: e.value.resolved,
-        isResponsive: e.metadata.isResponsive,
-        hasMediaQuery: !!e.context.mediaQuery,
-        mediaQuery: e.context.mediaQuery?.breakpoint
-      })), null, 2));
-      console.log('DEBUG: Summary:', JSON.stringify(result.summary, null, 2));
 
       expect(result.summary.responsiveProperties).toBeGreaterThan(0);
       expect(result.byBreakpoint.size).toBeGreaterThan(0);
