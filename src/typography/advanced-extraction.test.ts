@@ -59,7 +59,16 @@ describe('Advanced Typography Extraction Tests', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => { },
+        addChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        removeChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+          throw new Error('Function not implemented.');
+        }
       };
 
       const variableContext = {
@@ -98,7 +107,16 @@ describe('Advanced Typography Extraction Tests', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => { },
+        addChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        removeChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+          throw new Error('Function not implemented.');
+        }
       };
 
       const variableContext = {
@@ -144,7 +162,16 @@ describe('Advanced Typography Extraction Tests', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => { },
+        addChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        removeChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+          throw new Error('Function not implemented.');
+        }
       };
 
       const variableContext = {
@@ -193,7 +220,16 @@ describe('Advanced Typography Extraction Tests', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => { },
+        addChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        removeChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+          throw new Error('Function not implemented.');
+        }
       };
 
       const variableContext = {
@@ -237,7 +273,16 @@ describe('Advanced Typography Extraction Tests', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => { },
+        addChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        removeChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+          throw new Error('Function not implemented.');
+        }
       };
 
       const variableContext = {
@@ -330,7 +375,16 @@ describe('Advanced Typography Extraction Tests', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => { },
+        addChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        removeChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+          throw new Error('Function not implemented.');
+        }
       };
 
       const variableContext = {
@@ -368,7 +422,16 @@ describe('Advanced Typography Extraction Tests', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => { },
+        addChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        removeChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+          throw new Error('Function not implemented.');
+        }
       };
 
       const variableContext = {
@@ -429,7 +492,16 @@ function createFontShorthandAST(): SCSSNode {
     location,
     children: [],
     parent: undefined,
-    walkChildren: () => {}
+    walkChildren: () => { },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
+    }
   };
 
   const block: BlockNode = {
@@ -439,6 +511,15 @@ function createFontShorthandAST(): SCSSNode {
     parent: undefined,
     walkChildren: (callback) => {
       callback(declaration);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -451,6 +532,15 @@ function createFontShorthandAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(block);
       block.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -462,6 +552,15 @@ function createFontShorthandAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(rule);
       rule.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -483,7 +582,16 @@ function createComplexFontShorthandAST(): SCSSNode {
     location,
     children: [],
     parent: undefined,
-    walkChildren: () => {}
+    walkChildren: () => { },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
+    }
   };
 
   const block: BlockNode = {
@@ -493,6 +601,15 @@ function createComplexFontShorthandAST(): SCSSNode {
     parent: undefined,
     walkChildren: (callback) => {
       callback(declaration);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -505,6 +622,15 @@ function createComplexFontShorthandAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(block);
       block.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -516,6 +642,15 @@ function createComplexFontShorthandAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(rule);
       rule.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -537,7 +672,16 @@ function createMixedPropertiesAST(): SCSSNode {
     location,
     children: [],
     parent: undefined,
-    walkChildren: () => {}
+    walkChildren: () => { },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
+    }
   };
 
   const textTransformDeclaration: DeclarationNode = {
@@ -548,7 +692,16 @@ function createMixedPropertiesAST(): SCSSNode {
     location,
     children: [],
     parent: undefined,
-    walkChildren: () => {}
+    walkChildren: () => { },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
+    }
   };
 
   const block: BlockNode = {
@@ -559,6 +712,15 @@ function createMixedPropertiesAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(fontDeclaration);
       callback(textTransformDeclaration);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -571,6 +733,15 @@ function createMixedPropertiesAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(block);
       block.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -582,6 +753,15 @@ function createMixedPropertiesAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(rule);
       rule.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -604,7 +784,16 @@ function createMultipleFontShorthandAST(): SCSSNode {
     location,
     children: [],
     parent: undefined,
-    walkChildren: () => {}
+    walkChildren: () => { },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
+    }
   };
 
   const fontDeclaration2: DeclarationNode = {
@@ -615,7 +804,16 @@ function createMultipleFontShorthandAST(): SCSSNode {
     location,
     children: [],
     parent: undefined,
-    walkChildren: () => {}
+    walkChildren: () => { },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
+    }
   };
 
   const block1: BlockNode = {
@@ -625,6 +823,15 @@ function createMultipleFontShorthandAST(): SCSSNode {
     parent: undefined,
     walkChildren: (callback) => {
       callback(fontDeclaration1);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -635,6 +842,15 @@ function createMultipleFontShorthandAST(): SCSSNode {
     parent: undefined,
     walkChildren: (callback) => {
       callback(fontDeclaration2);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -647,6 +863,15 @@ function createMultipleFontShorthandAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(block1);
       block1.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -659,6 +884,15 @@ function createMultipleFontShorthandAST(): SCSSNode {
     walkChildren: (callback) => {
       callback(block2);
       block2.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 
@@ -672,6 +906,15 @@ function createMultipleFontShorthandAST(): SCSSNode {
       callback(rule2);
       rule1.walkChildren(callback);
       rule2.walkChildren(callback);
+    },
+    addChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    removeChild: function (child: SCSSNode): void {
+      throw new Error('Function not implemented.');
+    },
+    findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+      throw new Error('Function not implemented.');
     }
   };
 

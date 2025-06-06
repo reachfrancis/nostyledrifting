@@ -522,7 +522,16 @@ describe('Advanced Typography Extraction', () => {
         location: createMockLocation(),
         children: [],
         parent: undefined,
-        walkChildren: () => {}
+        walkChildren: () => { },
+        addChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        removeChild: function (child: SCSSNode): void {
+          throw new Error('Function not implemented.');
+        },
+        findChildrenByType: function <T extends SCSSNode>(type: string): T[] {
+          throw new Error('Function not implemented.');
+        }
       };
 
       const variableContext = {

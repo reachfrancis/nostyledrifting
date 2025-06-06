@@ -11,8 +11,8 @@
     "build": "tsc",
     "dev": "ts-node src/index.ts",
     "start": "node dist/index.js",
-    "test": "jest --watchAll=false",
-    "test:watch": "jest --watch",
+    "test": "jest",
+    "test:watch": "jest",
     "clean": "rimraf dist",
     "prepare": "npm run build"
   },
