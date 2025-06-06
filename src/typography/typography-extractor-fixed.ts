@@ -501,9 +501,8 @@ export class TypographyExtractor {
           mixins: partialEntry.dependencies?.mixins || [],
           imports: partialEntry.dependencies?.imports || [],
           customProperties: partialEntry.dependencies?.customProperties || dependencies.filter(d => d.startsWith('--'))
-        },
-        metadata: {
-          isResponsive: partialEntry.metadata?.isResponsive ?? (mediaQueryStack.length > 0),
+        },        metadata: {
+          isResponsive: (mediaQueryStack.length > 0) || (partialEntry.metadata?.isResponsive ?? false),
           hasVariables: partialEntry.metadata?.hasVariables ?? this.containsVariables(originalValue),
           hasFunctions: partialEntry.metadata?.hasFunctions ?? this.containsFunctions(originalValue),
           isInherited: partialEntry.metadata?.isInherited ?? false,
