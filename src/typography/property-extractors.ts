@@ -717,13 +717,21 @@ export class FontShorthandExtractor implements PropertyExtractor {
   private hasRelativeUnits(value: string): boolean {
     return /em|rem|%|vw|vh|vmin|vmax/i.test(value);
   }
-
   private containsVariables(value: string): boolean {
     return value.includes('$') || value.includes('var(');
   }
 
   private containsFunctions(value: string): boolean {
     return /calc\(|clamp\(|min\(|max\(/i.test(value);
+  }
+
+  private normalizeFontWeight(weight: string): string {
+    const keywordMap: Record<string, string> = {
+      'normal': '400',
+      'bold': '700'
+    };
+    
+    return keywordMap[weight.toLowerCase()] || weight;
   }
 }
 
