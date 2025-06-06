@@ -153,7 +153,6 @@ export class FontWeightExtractor implements PropertyExtractor {
       }
     };
   }
-
   public validate(value: string): boolean {
     const trimmed = value.trim().toLowerCase();
     
@@ -168,7 +167,15 @@ export class FontWeightExtractor implements PropertyExtractor {
   }
 
   public normalize(value: string): string {
-    return value.trim().toLowerCase();
+    const trimmed = value.trim().toLowerCase();
+    
+    // Convert keyword values to numeric equivalents
+    const keywordMap: { [key: string]: string } = {
+      'normal': '400',
+      'bold': '700'
+    };
+    
+    return keywordMap[trimmed] || trimmed;
   }
 
   private getNumericWeight(value: string): number | null {
