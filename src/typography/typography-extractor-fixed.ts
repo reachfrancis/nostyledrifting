@@ -116,13 +116,10 @@ export class TypographyExtractor {
       const customProperties = this.extractCustomProperties(ast);
 
       // Organize extracted data
-      const organized = this.organizeExtractedData(entries);
-
-      // Perform analysis
+      const organized = this.organizeExtractedData(entries);      // Perform analysis
       const analysis = await this.analyzer.analyzeTypography(entries);
 
-      console.log('Extracted Typography Entries:', entries);
-      console.log('Typography Analysis Result:', analysis);      const result: TypographyAnalysisResult = {
+      const result: TypographyAnalysisResult = {
         summary: {
           totalProperties: entries.length,
           uniqueFonts: this.countUniqueFonts(entries),
@@ -142,7 +139,9 @@ export class TypographyExtractor {
         consistency: analysis.consistency,
         accessibility: analysis.accessibility,
         responsiveness: analysis.responsiveness
-      };      const duration = Date.now() - startTime;
+      };
+
+      const duration = Date.now() - startTime;
       console.log(`Typography extraction completed in ${duration}ms`);
       return result;
     } catch (error: unknown) {
