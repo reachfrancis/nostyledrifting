@@ -391,11 +391,9 @@ export class TypographyExtractor {
     options: ExtractionOptions
   ): Promise<TypographyEntry | TypographyEntry[] | null> {
     try {
-      const property = declNode.property as TypographyProperty;
-        // Use PropertyExtractor for advanced property handling
+      const property = declNode.property as TypographyProperty;      // Use PropertyExtractor for advanced property handling
       const extractor = this.propertyExtractorFactory.getExtractor(property);
       if (extractor) {
-        console.log(`DEBUG: Using PropertyExtractor for ${property}`);
         const extractorResult = await extractor.extract(declNode, variableContext);
         
         // Handle both single and multiple entries from PropertyExtractor
@@ -403,7 +401,6 @@ export class TypographyExtractor {
         const fullEntries: TypographyEntry[] = [];
         
         for (const partialEntry of partialEntries) {
-          console.log(`DEBUG: Partial entry from PropertyExtractor:`, partialEntry.value);
           const fullEntry = await this.completeTypographyEntry(
             partialEntry,
             declNode,
@@ -413,7 +410,6 @@ export class TypographyExtractor {
             mediaQueryStack,
             options
           );
-          console.log(`DEBUG: Full entry after completion:`, fullEntry?.value);
           if (fullEntry) {
             fullEntries.push(fullEntry);
           }
@@ -478,10 +474,9 @@ export class TypographyExtractor {
       const entry: TypographyEntry = {
         id,
         selector: partialEntry.selector || selector,
-        property: partialEntry.property || property,
-        value: {
+        property: partialEntry.property || property,        value: {
           original: partialEntry.value?.original || originalValue,
-          resolved: partialEntry.value?.resolved || resolvedValue,
+          resolved: resolvedValue, // Use the computed resolvedValue, not the partial entry's value
           computed: partialEntry.value?.computed || computedValue
         },
         context: {
