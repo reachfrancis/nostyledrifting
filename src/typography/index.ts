@@ -410,7 +410,7 @@ export class TypographyAPI {
 
 // Export all types and classes
 export * from './types';
-export { TypographyExtractor } from './typography-extractor';
+export { TypographyExtractor } from './typography-extractor-fixed';
 export { VariableResolver } from './variable-resolver';
 export { MediaQueryAnalyzer } from './media-query-analyzer';
 export { FontFaceProcessor } from './font-face-processor';
