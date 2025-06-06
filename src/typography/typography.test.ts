@@ -152,6 +152,20 @@ describe('Typography Integration Tests', () => {
       const ast = createResponsiveAST();
       const result = await api.extractFromAST(ast, 'responsive.scss');
 
+      // Debug: Log the actual result structure
+      console.log('DEBUG: Typography entries:', result.typography.entries.length);
+      console.log('DEBUG: Entries:', JSON.stringify(result.typography.entries.map(e => ({
+        selector: e.selector,
+        property: e.property,
+        value: e.value.resolved,
+        isResponsive: e.metadata.isResponsive,
+        hasMediaQuery: !!e.context.mediaQuery,
+        mediaQuery: e.context.mediaQuery?.breakpoint
+      })), null, 2));
+      console.log('DEBUG: Summary:', JSON.stringify(result.summary, null, 2));
+      console.log('DEBUG: ByBreakpoint size:', result.byBreakpoint.size);
+      console.log('DEBUG: ByBreakpoint keys:', Array.from(result.byBreakpoint.keys()));
+
       expect(result.summary.responsiveProperties).toBeGreaterThan(0);
       expect(result.byBreakpoint.size).toBeGreaterThan(0);
     });
