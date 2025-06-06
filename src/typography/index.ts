@@ -1,4 +1,3 @@
-
 import { TypographyExtractor } from './typography-extractor-fixed';
 import { TypographyAnalyzer } from './typography-analyzer';
 import { StreamingTypographyExtractor } from './streaming-extractor';
@@ -218,15 +217,43 @@ export class TypographyAPI {
             type: 'INVALID_PROPERTY_VALUE' as any,
             message: error.message,
             location: entry.context.location,
-            property: entry.property,
-            value: entry.value.original
+            recovery: {
+              recover: () => ({
+                canRecover: false,
+                recoveredValue: null,
+                strategy: 'skip' as const,
+                warnings: []
+              })
+            }
           });
         }
       }
     }
 
     return errors;
-  }  private createCache(maxSize: number): TypographyCache {
+  }
+
+  /**
+   * Validate a single typography entry
+   */
+  private validateTypographyEntry(entry: TypographyEntry): void {
+    if (!entry.selector || entry.selector.trim() === '') {
+      throw new Error('Entry must have a valid selector');
+    }
+    
+    if (!entry.property || entry.property.trim() === '') {
+      throw new Error('Entry must have a valid property');
+    }
+    
+    if (!entry.value.original || entry.value.original.trim() === '') {
+      throw new Error('Entry must have a valid value');
+    }
+    
+    if (!entry.id || entry.id.trim() === '') {
+      throw new Error('Entry must have a valid ID');
+    }
+  }
+  private createCache(maxSize: number): TypographyCache {
     const variableCache = new Map();
     const functionCache = new Map();
     const selectorCache = new Map<string, TypographyAnalysisResult>();
@@ -392,18 +419,6 @@ export class TypographyAPI {
         }
         result.byBreakpoint.get(breakpoint)!.push(entry);
       }
-    }
-  }
-
-  private validateTypographyEntry(entry: TypographyEntry): void {
-    if (!entry.selector) {
-      throw new Error('Typography entry must have a selector');
-    }
-    if (!entry.property) {
-      throw new Error('Typography entry must have a property');
-    }
-    if (!entry.value.original) {
-      throw new Error('Typography entry must have an original value');
     }
   }
 }
