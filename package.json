@@ -16,7 +16,8 @@
     "test:watch": "jest --watch",
     "test:single": "jest --watchAll=false --testNamePattern",
     "clean": "rimraf dist",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "acp": "git add . && git commit -m 'wip' && git push"
   },
   "keywords": [
     "git",
