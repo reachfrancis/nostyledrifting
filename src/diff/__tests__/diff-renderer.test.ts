@@ -7,7 +7,7 @@ import { DiffRenderer, createDiffRenderer, quickRender } from '../diff-renderer'
 import { TerminalRenderer } from '../renderers/terminal-renderer';
 import { JsonRenderer } from '../renderers/json-renderer';
 import { HtmlRenderer } from '../renderers/html-renderer';
-import { StyleDiffResult, DiffChange, DiffChunk } from '../types';
+import { StyleDiffResult, DiffChange, DiffChunk, DiffAnalysisMode } from '../types';
 
 // Mock data for testing
 const createMockDiffResult = (): StyleDiffResult => ({
@@ -26,12 +26,14 @@ const createMockDiffResult = (): StyleDiffResult => ({
     addedLines: 3,
     removedLines: 1,
     modifiedLines: 1
-  },
-  metadata: {
+  },  metadata: {
     comparisonTime: new Date(),
     processingTimeMs: 150,
     diffAlgorithm: 'myers',
     version: '1.0.0',
+    engineVersion: '1.0.0',
+    analysisMode: 'semantic',
+    cacheUsed: false,
     options: {
       viewMode: 'unified',
       contextLines: 3,
@@ -382,6 +384,9 @@ describe('Diff Rendering System', () => {
           processingTimeMs: 0,
           diffAlgorithm: 'test',
           version: '1.0.0',
+          engineVersion: '1.0.0',
+          analysisMode: 'semantic',
+          cacheUsed: false,
           options: {
             viewMode: 'unified',
             contextLines: 3,

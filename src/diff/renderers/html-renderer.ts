@@ -16,7 +16,7 @@ export interface HtmlRenderOptions extends DiffRenderOptions {
 }
 
 export class HtmlRenderer extends BaseDiffRenderer {
-  private options: HtmlRenderOptions;
+  protected options: HtmlRenderOptions;
 
   constructor(options: HtmlRenderOptions = {}) {
     super(options);

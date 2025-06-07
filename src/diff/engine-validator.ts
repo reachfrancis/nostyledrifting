@@ -13,13 +13,11 @@ export class EngineValidator {
   public static async validateFiles(file1: string, file2: string): Promise<DiffValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
-    
-
-    try {
+        try {
       // Check if files exist and are accessible
       const [stat1, stat2] = await Promise.all([
-        this.validateFileAccess(file1),
-        this.validateFileAccess(file2)
+        EngineValidator.validateFileAccess(file1),
+        EngineValidator.validateFileAccess(file2)
       ]);
 
       if (!stat1.exists) {
@@ -41,27 +39,23 @@ export class EngineValidator {
       // Check file extensions
       if (stat1.exists && stat2.exists) {
         const ext1 = path.extname(file1).toLowerCase();
-        const ext2 = path.extname(file2).toLowerCase();
-
-        if (!this.isSupportedExtension(ext1)) {
+        const ext2 = path.extname(file2).toLowerCase();        if (!EngineValidator.isSupportedExtension(ext1)) {
           warnings.push(`File type may not be supported: ${ext1} (${file1})`);
         }
-        if (!this.isSupportedExtension(ext2)) {
+        if (!EngineValidator.isSupportedExtension(ext2)) {
           warnings.push(`File type may not be supported: ${ext2} (${file2})`);
         }
 
         if (ext1 !== ext2) {
           warnings.push(`Files have different extensions: ${ext1} vs ${ext2}`);
         }
-      }
-
-      // Check file sizes
+      }      // Check file sizes
       if (stat1.exists && stat1.size > 10 * 1024 * 1024) { // 10MB
-        warnings.push(`Large file may impact performance: ${file1} (${this.formatBytes(stat1.size)})`);
+        warnings.push(`Large file may impact performance: ${file1} (${EngineValidator.formatBytes(stat1.size)})`);
         
       }
       if (stat2.exists && stat2.size > 10 * 1024 * 1024) { // 10MB
-        warnings.push(`Large file may impact performance: ${file2} (${this.formatBytes(stat2.size)})`);
+        warnings.push(`Large file may impact performance: ${file2} (${EngineValidator.formatBytes(stat2.size)})`);
         
       }
 
@@ -73,7 +67,7 @@ export class EngineValidator {
             fs.readFile(file2, 'utf-8')
           ]);
 
-          const contentValidation = await this.validateContent(content1, content2);
+          const contentValidation = await EngineValidator.validateContent(content1, content2);
           errors.push(...contentValidation.errors);
           warnings.push(...contentValidation.warnings);
           
@@ -110,43 +104,37 @@ export class EngineValidator {
 
     if (content1.length === 0 && content2.length === 0) {
       warnings.push('Both content strings are empty');
-    }
-
-    // Check for extremely large content
+    }    // Check for extremely large content
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (content1.length > maxSize) {
-      warnings.push(`First content is very large (${this.formatBytes(content1.length)})`);
+      warnings.push(`First content is very large (${EngineValidator.formatBytes(content1.length)})`);
       
     }
     if (content2.length > maxSize) {
-      warnings.push(`Second content is very large (${this.formatBytes(content2.length)})`);
+      warnings.push(`Second content is very large (${EngineValidator.formatBytes(content2.length)})`);
       
-    }
-
-    // Validate SCSS syntax (basic check)
-    const syntax1 = await this.validateScssContent(content1);
-    const syntax2 = await this.validateScssContent(content2);
+    }    // Validate SCSS syntax (basic check)
+    const syntax1 = await EngineValidator.validateScssContent(content1);
+    const syntax2 = await EngineValidator.validateScssContent(content2);
 
     if (!syntax1.valid) {
       warnings.push(`First content may have SCSS syntax issues: ${syntax1.errors.join(', ')}`);
     }
     if (!syntax2.valid) {
       warnings.push(`Second content may have SCSS syntax issues: ${syntax2.errors.join(', ')}`);
-    }
-
-    // Check for binary content
-    if (this.containsBinaryData(content1)) {
+    }    // Check for binary content
+    if (EngineValidator.containsBinaryData(content1)) {
       errors.push('First content appears to contain binary data');
     }
-    if (this.containsBinaryData(content2)) {
+    if (EngineValidator.containsBinaryData(content2)) {
       errors.push('Second content appears to contain binary data');
     }
 
     // Check character encoding issues
-    if (this.hasEncodingIssues(content1)) {
+    if (EngineValidator.hasEncodingIssues(content1)) {
       warnings.push('First content may have character encoding issues');
     }
-    if (this.hasEncodingIssues(content2)) {
+    if (EngineValidator.hasEncodingIssues(content2)) {
       warnings.push('Second content may have character encoding issues');
     }
 
@@ -211,11 +199,10 @@ export class EngineValidator {
       warnings,
       
     };
-  }
-  /**
+  }  /**
    * Validate batch comparison operation
    */
-  public validateBatchOperation(comparisons: DiffComparison[]): DiffValidationResult {
+  public static validateBatchOperation(comparisons: DiffComparison[]): DiffValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
     
@@ -431,10 +418,9 @@ export class EngineValidator {
     switch (comparison.type) {
       case 'files':
         return `files:${comparison.file1}:${comparison.file2}`;
-      case 'content':
-        // Use hash for content to avoid storing large strings
-        const hash1 = this.simpleHash(comparison.content1 || '');
-        const hash2 = this.simpleHash(comparison.content2 || '');
+      case 'content':        // Use hash for content to avoid storing large strings
+        const hash1 = EngineValidator.simpleHash(comparison.content1 || '');
+        const hash2 = EngineValidator.simpleHash(comparison.content2 || '');
         return `content:${hash1}:${hash2}`;
       case 'branch-files':
         return `branch:${comparison.branch1}:${comparison.branch2}:${comparison.filePath}`;

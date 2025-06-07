@@ -55,6 +55,8 @@ export interface StyleDiffResult {
   summary: DiffSummary;
   /** Metadata about the diff operation */
   metadata: DiffMetadata;
+  /** Diff chunks for direct access (legacy compatibility) */
+  chunks: DiffChunk[];
 }
 
 /**
@@ -211,6 +213,12 @@ export interface DiffMetadata {
   diffAlgorithm: string;
   /** Version of the diff engine */
   version: string;
+  /** Engine version */
+  engineVersion: string;
+  /** Analysis mode used */
+  analysisMode: DiffAnalysisMode;
+  /** Whether cache was used */
+  cacheUsed: boolean;
   /** Options used for this diff operation */
   options: DiffOptions;
 }
@@ -627,12 +635,27 @@ export type DiffComparison = {
  * Engine performance metrics
  */
 export interface EnginePerformanceMetrics {
+  /** Start time timestamp */
   startTime: number;
+  /** End time timestamp */
   endTime: number;
+  /** Duration in milliseconds */
   duration: number;
+  /** Number of files processed */
   filesProcessed: number;
+  /** Cache hits */
   cacheHits: number;
+  /** Cache misses */
   cacheMisses: number;
+  /** Total number of comparisons performed */
+  totalComparisons: number;
+  /** Total processing time in milliseconds */
+  totalProcessingTime: number;
+  /** Average processing time per comparison */
+  averageProcessingTime: number;
+  /** Throughput (comparisons per second) */
+  throughput: number;
+  /** Memory usage information */
   memoryUsage: {
     peak: number;
     current: number;
@@ -643,10 +666,17 @@ export interface EnginePerformanceMetrics {
  * Cache statistics
  */
 export interface DiffCacheStats {
+  /** Total number of entries in cache */
+  totalEntries: number;
+  /** Number of cache hits */
   hits: number;
+  /** Number of cache misses */
   misses: number;
+  /** Current cache size */
   size: number;
+  /** Maximum cache size */
   maxSize: number;
+  /** Cache hit rate */
   hitRate: number;
 }
 
@@ -684,6 +714,12 @@ export interface SemanticDiffGroup {
  * Render options for diff output
  */
 export interface DiffRenderOptions {
+  /** Whether to include metadata in the output */
+  includeMetadata?: boolean;
+  /** Whether to include statistics in the output */
+  includeStatistics?: boolean;
+  /** Maximum width for content truncation */
+  maxWidth?: number;
   /** Options for terminal rendering */
   terminalOptions?: TerminalRenderOptions;
   /** Options for HTML rendering */
@@ -704,6 +740,10 @@ export interface TerminalRenderOptions {
   theme: 'dark' | 'light' | 'auto';
   /** Whether to include line numbers */
   includeLineNumbers: boolean;
+  /** Whether to include metadata */
+  includeMetadata?: boolean;
+  /** Whether to include statistics */
+  includeStatistics?: boolean;
 }
 
 /**
@@ -716,6 +756,8 @@ export interface HtmlRenderOptions {
   inlineStyles: boolean;
   /** HTML template to use */
   template?: string;
+  /** Title for the HTML document */
+  title?: string;
   /** Whether to include statistics */
   includeStatistics: boolean;
   /** Whether to include metadata */
@@ -734,6 +776,8 @@ export interface JsonRenderOptions {
   includeFields?: string[];
   /** Fields to exclude from the output */
   excludeFields?: string[];
+  /** Schema version for JSON output */
+  schemaVersion?: string;
   /** Whether to include metadata */
   includeMetadata: boolean;
   /** Whether to include content */
@@ -749,5 +793,8 @@ export interface RenderedDiff {
   metadata: {
     generatedAt: number;
     options: DiffRenderOptions;
+    title?: string;
+    resultCount?: number;
+    schemaVersion?: string;
   };
 }

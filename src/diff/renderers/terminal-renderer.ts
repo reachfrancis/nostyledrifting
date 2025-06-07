@@ -4,7 +4,7 @@
  */
 
 import chalk from 'chalk';
-import { StyleDiffResult, DiffRenderOptions, RenderedDiff, DiffChunk, DiffChange } from '../types';
+import { StyleDiffResult, DiffRenderOptions, RenderedDiff, DiffChunk, DiffChange, DiffRenderFormat } from '../types';
 import { BaseDiffRenderer } from './base-renderer';
 
 export interface TerminalRenderOptions extends DiffRenderOptions {
@@ -31,7 +31,7 @@ export class TerminalRenderer extends BaseDiffRenderer {
     separator: chalk.dim.gray
   };
 
-  private options: TerminalRenderOptions;
+  protected options: TerminalRenderOptions;
 
   constructor(options: TerminalRenderOptions = {}) {
     super(options);
@@ -68,23 +68,27 @@ export class TerminalRenderer extends BaseDiffRenderer {
     // Add metadata if requested
     if (this.options.includeMetadata) {
       output.push(this.renderMetadata(diffResult));
-    }
-
-    return {
-      format: 'terminal',
+    }    return {
+      format: DiffRenderFormat.TERMINAL,
       content: output.join('\n'),
-      metadata: this.generateMetadata(diffResult)
+      metadata: {
+        generatedAt: Date.now(),
+        options: this.options,
+        ...this.generateMetadata(diffResult)
+      }
     };
   }
-
   protected combineRenderedResults(parts: RenderedDiff[]): RenderedDiff {
     const combinedContent = parts.map(part => part.content).join('\n\n');
-    const combinedMetadata = parts.reduce((acc, part) => ({ ...acc, ...part.metadata }), {});
 
     return {
-      format: 'terminal',
+      format: DiffRenderFormat.TERMINAL,
       content: combinedContent,
-      metadata: combinedMetadata
+      metadata: {
+        generatedAt: Date.now(),
+        options: this.options,
+        resultCount: parts.length
+      }
     };
   }
 

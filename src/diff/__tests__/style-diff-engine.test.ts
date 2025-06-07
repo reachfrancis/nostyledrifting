@@ -11,7 +11,11 @@ jest.mock('../diff-analyzer');
 jest.mock('../context-aware-diff-analyzer');
 jest.mock('../diff-renderer');
 
-const mockFs = fs as jest.Mocked<typeof fs>;
+const mockFs = {
+  readFile: jest.fn(),
+  stat: jest.fn(),
+  access: jest.fn()
+} as any;
 
 describe('StyleDiffEngine', () => {
   let engine: StyleDiffEngine;

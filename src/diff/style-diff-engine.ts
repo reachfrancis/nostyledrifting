@@ -5,7 +5,7 @@ import { DiffCache } from './engine-cache';
 import { PerformanceTracker } from './performance-tracker';
 import { EngineValidator } from './engine-validator';
 import { EngineErrorRecovery } from './engine-error-recovery';
-import { EngineConfigManager } from './engine-config';
+import { EngineConfigManager, StyleDiffEngineConfig } from './engine-config';
 import { 
   StyleDiffOptions, 
   StyleDiffResult, 
@@ -34,14 +34,35 @@ export class StyleDiffEngine {
   private validator: EngineValidator;
   private errorRecovery: EngineErrorRecovery;
   private configManager: EngineConfigManager;
-
   constructor(options?: Partial<StyleDiffOptions>) {
-    this.configManager = new EngineConfigManager(options);
-    const config = this.configManager.getConfig();
-
-    // Initialize core components
-    this.diffAnalyzer = new DiffAnalyzer(config.analysis);
-    this.contextAnalyzer = new ContextAwareDiffAnalyzer(config.analysis);
+    // Convert StyleDiffOptions to StyleDiffEngineConfig
+    const engineConfig: Partial<StyleDiffEngineConfig> = options ? {
+      analysis: {
+        mode: options.analysisMode || DiffAnalysisMode.TEXT,
+        contextDepth: options.contextLines || 3,
+        includeVariables: options.includeVariables || false,
+        includeImports: options.includeImports || false,
+        semanticAnalysis: options.semanticAnalysis || false,
+        performanceMode: options.performanceMode || 'balanced',
+        strictMode: options.strictMode || false,
+        ignoreWhitespace: options.ignoreWhitespace || false,
+        ignoreComments: options.ignoreComments || false
+      }
+    } : {};
+    
+    this.configManager = new EngineConfigManager(engineConfig);
+    const config = this.configManager.getConfig();    // Initialize core components
+    const analysisOptions: Partial<DiffOptions> = {
+      viewMode: 'unified',
+      contextLines: config.analysis.contextDepth,
+      groupRelatedChanges: true,
+      resolveVariables: config.analysis.includeVariables,
+      showOnlyChanges: false,
+      format: 'terminal'
+    };
+    
+    this.diffAnalyzer = new DiffAnalyzer(analysisOptions);
+    this.contextAnalyzer = new ContextAwareDiffAnalyzer();
     this.renderer = new DiffRenderer(config.output);
     this.cache = new DiffCache(config.cache);
     this.performanceTracker = new PerformanceTracker();

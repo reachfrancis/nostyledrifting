@@ -87,9 +87,8 @@ export abstract class BaseDiffRenderer {
     // Analyze property changes for statistics
     diffResult.fileDiffs.forEach(fileDiff => {
       fileDiff.chunks.forEach(chunk => {
-        chunk.changes.forEach(change => {
-          if (change.cssPropertyChanges) {
-            change.cssPropertyChanges.forEach(propChange => {
+        chunk.changes.forEach(change => {        if (change.cssProperties) {
+          change.cssProperties.forEach(propChange => {
               // Count impact levels
               stats.impactAnalysis[propChange.impact]++;
 

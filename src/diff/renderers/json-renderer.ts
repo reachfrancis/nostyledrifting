@@ -34,7 +34,7 @@ export interface JsonDiffSchema {
 }
 
 export class JsonRenderer extends BaseDiffRenderer {
-  private options: JsonRenderOptions;
+  protected options: JsonRenderOptions;
 
   constructor(options: JsonRenderOptions = {}) {
     super(options);
