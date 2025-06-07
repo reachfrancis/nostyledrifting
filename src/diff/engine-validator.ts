@@ -1,4 +1,4 @@
-import { StyleDiffOptions, DiffValidationResult, DiffComparison } from './types';
+import { StyleDiffOptions, DiffValidationResult, DiffComparison, DiffAnalysisMode } from './types';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
@@ -13,7 +13,7 @@ export class EngineValidator {
   public static async validateFiles(file1: string, file2: string): Promise<DiffValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const suggestions: string[] = [];
+    
 
     try {
       // Check if files exist and are accessible
@@ -58,11 +58,11 @@ export class EngineValidator {
       // Check file sizes
       if (stat1.exists && stat1.size > 10 * 1024 * 1024) { // 10MB
         warnings.push(`Large file may impact performance: ${file1} (${this.formatBytes(stat1.size)})`);
-        suggestions.push('Consider using streaming mode for large files');
+        
       }
       if (stat2.exists && stat2.size > 10 * 1024 * 1024) { // 10MB
         warnings.push(`Large file may impact performance: ${file2} (${this.formatBytes(stat2.size)})`);
-        suggestions.push('Consider using streaming mode for large files');
+        
       }
 
       // Validate file contents if accessible
@@ -76,7 +76,7 @@ export class EngineValidator {
           const contentValidation = await this.validateContent(content1, content2);
           errors.push(...contentValidation.errors);
           warnings.push(...contentValidation.warnings);
-          suggestions.push(...contentValidation.suggestions);
+          
 
         } catch (error) {
           warnings.push(`Could not read file contents for validation: ${(error as Error).message}`);
@@ -98,7 +98,7 @@ export class EngineValidator {
   public static async validateContent(content1: string, content2: string): Promise<DiffValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const suggestions: string[] = [];
+    
 
     // Basic content validation
     if (typeof content1 !== 'string') {
@@ -116,11 +116,11 @@ export class EngineValidator {
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (content1.length > maxSize) {
       warnings.push(`First content is very large (${this.formatBytes(content1.length)})`);
-      suggestions.push('Consider using streaming mode for large content');
+      
     }
     if (content2.length > maxSize) {
       warnings.push(`Second content is very large (${this.formatBytes(content2.length)})`);
-      suggestions.push('Consider using streaming mode for large content');
+      
     }
 
     // Validate SCSS syntax (basic check)
@@ -154,7 +154,7 @@ export class EngineValidator {
       valid: errors.length === 0,
       errors,
       warnings,
-      suggestions
+      
     };
   }
 
@@ -164,39 +164,27 @@ export class EngineValidator {
   public static validateOptions(options: StyleDiffOptions): DiffValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const suggestions: string[] = [];
+    
 
     if (!options) {
       errors.push('Options object is required');
       return { valid: false, errors, warnings };
-    }
-
-    // Validate analysis mode
-    if (options.analysisMode && !Object.values(['text', 'semantic', 'comprehensive']).includes(options.analysisMode as string)) {
+    }    // Validate analysis mode
+    if (options.analysisMode && !Object.values(DiffAnalysisMode).includes(options.analysisMode)) {
       errors.push(`Invalid analysis mode: ${options.analysisMode}`);
     }
 
     // Validate context depth
-    if (options.contextDepth !== undefined) {
-      if (typeof options.contextDepth !== 'number' || options.contextDepth < 0) {
+    if (options.contextLines !== undefined) {
+      if (typeof options.contextLines !== 'number' || options.contextLines < 0) {
         errors.push('Context depth must be a non-negative number');
-      } else if (options.contextDepth > 20) {
+      } else if (options.contextLines > 20) {
         warnings.push('High context depth may impact performance');
-        suggestions.push('Consider reducing context depth for better performance');
+        
       }
-    }
-
-    // Validate performance options
-    if (options.timeout !== undefined) {
-      if (typeof options.timeout !== 'number' || options.timeout <= 0) {
-        errors.push('Timeout must be a positive number');
-      } else if (options.timeout < 1000) {
-        warnings.push('Very short timeout may cause operations to fail');
-      } else if (options.timeout > 300000) { // 5 minutes
-        warnings.push('Very long timeout may cause the application to appear unresponsive');
-      }
-    }
-
+    }    // Validate performance options
+    // Note: timeout property removed from interface
+    
     // Validate boolean options
     const booleanOptions = [
       'includeVariables', 'includeImports', 'ignoreWhitespace', 
@@ -207,40 +195,30 @@ export class EngineValidator {
       if (options.hasOwnProperty(option) && typeof (options as any)[option] !== 'boolean') {
         errors.push(`${option} must be a boolean value`);
       }
-    });
-
-    // Validate file paths if provided
-    if (options.filePath1 && typeof options.filePath1 !== 'string') {
-      errors.push('filePath1 must be a string');
-    }
-    if (options.filePath2 && typeof options.filePath2 !== 'string') {
-      errors.push('filePath2 must be a string');
+    });    // Validate file paths - removed as they're not part of StyleDiffOptions
+    // File paths are handled through DiffComparison interface instead    // Logical validation
+    if (options.ignoreWhitespace && options.analysisMode === DiffAnalysisMode.SEMANTIC) {
+      warnings.push('Ignoring whitespace in semantic mode may affect semantic analysis');
     }
 
-    // Logical validation
-    if (options.ignoreWhitespace && options.analysisMode === 'comprehensive') {
-      warnings.push('Ignoring whitespace in comprehensive mode may affect semantic analysis');
-    }
-
-    if (options.strictMode && options.analysisMode === 'text') {
-      suggestions.push('Strict mode has limited effect in text-only analysis mode');
+    if (options.strictMode && options.analysisMode === DiffAnalysisMode.TEXT) {
+      // Note: Logical validation for strict mode with text analysis
     }
 
     return {
       valid: errors.length === 0,
       errors,
       warnings,
-      suggestions
+      
     };
   }
-
   /**
    * Validate batch comparison operation
    */
-  public static validateBatchOperation(comparisons: DiffComparison[]): DiffValidationResult {
+  public validateBatchOperation(comparisons: DiffComparison[]): DiffValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const suggestions: string[] = [];
+    
 
     if (!Array.isArray(comparisons)) {
       errors.push('Comparisons must be an array');
@@ -253,16 +231,9 @@ export class EngineValidator {
 
     if (comparisons.length > 1000) {
       warnings.push(`Large batch size (${comparisons.length}) may impact performance`);
-      suggestions.push('Consider processing in smaller batches');
-    }
-
-    // Validate each comparison
+      
+    }    // Validate each comparison
     comparisons.forEach((comparison, index) => {
-      if (!comparison.type) {
-        errors.push(`Comparison ${index}: type is required`);
-        return;
-      }
-
       switch (comparison.type) {
         case 'files':
           if (!comparison.file1 || !comparison.file2) {
@@ -283,12 +254,12 @@ export class EngineValidator {
           break;
 
         default:
-          errors.push(`Comparison ${index}: unknown comparison type: ${comparison.type}`);
+          errors.push(`Comparison ${index}: unknown comparison type: ${(comparison as any).type}`);
       }
 
       // Validate options if provided
       if (comparison.options) {
-        const optionValidation = this.validateOptions(comparison.options);
+        const optionValidation = EngineValidator.validateOptions(comparison.options);
         if (!optionValidation.valid) {
           errors.push(`Comparison ${index} options: ${optionValidation.errors.join(', ')}`);
         }
@@ -298,7 +269,7 @@ export class EngineValidator {
     // Check for duplicate comparisons
     const uniqueComparisons = new Set();
     comparisons.forEach((comparison, index) => {
-      const key = this.getComparisonKey(comparison);
+      const key = EngineValidator.getComparisonKey(comparison);
       if (uniqueComparisons.has(key)) {
         warnings.push(`Comparison ${index}: duplicate comparison detected`);
       } else {
@@ -310,7 +281,7 @@ export class EngineValidator {
       valid: errors.length === 0,
       errors,
       warnings,
-      suggestions
+      
     };
   }
 
@@ -350,7 +321,7 @@ export class EngineValidator {
   private static async validateScssContent(content: string): Promise<DiffValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const suggestions: string[] = [];
+    
 
     // Basic SCSS syntax checks
     const lines = content.split('\n');
@@ -430,7 +401,7 @@ export class EngineValidator {
       valid: errors.length === 0,
       errors,
       warnings,
-      suggestions
+      
     };
   }
 
@@ -456,7 +427,6 @@ export class EngineValidator {
 
     return `${size.toFixed(2)} ${units[unitIndex]}`;
   }
-
   private static getComparisonKey(comparison: DiffComparison): string {
     switch (comparison.type) {
       case 'files':

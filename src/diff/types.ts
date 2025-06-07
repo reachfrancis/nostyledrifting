@@ -600,13 +600,28 @@ export interface DiffValidationResult {
 }
 
 /**
- * Diff comparison configuration
+ * Diff comparison configuration - supports multiple comparison types
  */
-export interface DiffComparison {
-  file1: string;
-  file2: string;
+export type DiffComparison = {
   options: StyleDiffOptions;
-}
+} & (
+  | {
+      type: 'files';
+      file1: string;
+      file2: string;
+    }
+  | {
+      type: 'content';
+      content1: string;
+      content2: string;
+    }
+  | {
+      type: 'branch-files';
+      branch1: string;
+      branch2: string;
+      filePath: string;
+    }
+);
 
 /**
  * Engine performance metrics

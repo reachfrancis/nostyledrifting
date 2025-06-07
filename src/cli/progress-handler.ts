@@ -221,11 +221,10 @@ export class ProgressHandler {
       console.error(chalk.gray(`  ${details}`));
     }
   }
-
   /**
    * Log verbose message (only shown in verbose mode)
    */
-  verbose(message: string, details?: string): void {
+  logVerbose(message: string, details?: string): void {
     if (this.silent || !this.verbose) return;
     
     console.log(chalk.gray('→'), chalk.gray(message));

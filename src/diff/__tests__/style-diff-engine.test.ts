@@ -1,4 +1,5 @@
 import { StyleDiffEngine } from '../style-diff-engine';
+import { StyleDiffEngine } from '../style-diff-engine';
 import { StyleDiffEngineFactory, createQuickEngine, createDevelopmentEngine } from '../engine-factory';
 import { EngineConfigManager } from '../engine-config';
 import { DiffAnalysisMode, DiffRenderFormat } from '../types';
@@ -76,7 +77,7 @@ describe('StyleDiffEngine', () => {
         
         expect(result).toBeDefined();
         expect(result.metadata).toBeDefined();
-        expect(result.metadata.engineVersion).toBe('1.0.0');
+        expect(result.metadata.version).toBe('1.0.0');
         expect(mockFs.readFile).toHaveBeenCalledTimes(2);
       });
 
@@ -157,22 +158,37 @@ describe('StyleDiffEngine', () => {
         mockFs.access.mockResolvedValue(undefined);
       });
 
-      test('should handle batch file comparisons', async () => {
-        const comparisons = [
-          { type: 'files' as const, file1: 'file1.scss', file2: 'file2.scss' },
-          { type: 'files' as const, file1: 'file3.scss', file2: 'file4.scss' },
-          { type: 'content' as const, content1: testScssContent1, content2: testScssContent2 }
+      test('should handle batch file comparisons', async () => {        const comparisons = [
+          { 
+            type: 'files' as const, 
+            file1: 'file1.scss', 
+            file2: 'file2.scss',
+            options: { analysisMode: DiffAnalysisMode.TEXT, contextLines: 3 }
+          },
+          { 
+            type: 'files' as const, 
+            file1: 'file3.scss', 
+            file2: 'file4.scss',
+            options: { analysisMode: DiffAnalysisMode.TEXT, contextLines: 3 }
+          },
+          { 
+            type: 'content' as const, 
+            content1: testScssContent1, 
+            content2: testScssContent2,
+            options: { analysisMode: DiffAnalysisMode.TEXT, contextLines: 3 }
+          }
         ];
 
         const results = await engine.batchCompare(comparisons);
         
         expect(results).toHaveLength(3);
         expect(results.every(result => result.metadata)).toBe(true);
-      });
-
-      test('should validate batch operations', async () => {
+      });      test('should validate batch operations', async () => {
         const invalidComparisons = [
-          { type: 'invalid' as any }
+          { 
+            type: 'invalid' as any,
+            options: { analysisMode: DiffAnalysisMode.TEXT, contextLines: 3 }
+          }
         ];
 
         await expect(engine.batchCompare(invalidComparisons))

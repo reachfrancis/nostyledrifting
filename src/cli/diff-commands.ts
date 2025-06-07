@@ -262,14 +262,30 @@ export class DiffCommandHandler {
       }
 
       // Create engine
-      const engine = StyleDiffEngineFactory.createEngine(options.preset);
-
+      const engine = StyleDiffEngineFactory.createEngine(options.preset);      // Prepare diff options
+      const diffOptions: Partial<StyleDiffOptions> = {
+        analysisMode: (options.semantic ? 'semantic' : 'text') as DiffAnalysisMode,
+        contextLines: parseInt(options.context || '3'),
+        includeVariables: options.variables || false,
+        includeImports: options.imports || false,
+        performanceMode: 'balanced',
+        semanticAnalysis: true,
+        ignoreWhitespace: false,
+        ignoreComments: false,
+        strictMode: false,
+        viewMode: 'unified',
+        groupRelatedChanges: true,
+        resolveVariables: true,
+        showOnlyChanges: false,
+        format: 'terminal'
+      };
+      
       // Prepare comparisons
       const comparisons = filesToCompare.map(file => ({
         type: 'files' as const,
         file1: path.join(dir1, file),
         file2: path.join(dir2, file),
-        options: { filePath: file }
+        options: diffOptions
       }));
 
       // Execute comparisons with progress
@@ -323,7 +339,7 @@ export class DiffCommandHandler {
           const result = results[i];
           const file = filesToCompare[i];
           
-          if (result && (result.chunks.length > 0 || options.includeUnchanged)) {
+          if (result && (result.fileDiffs.some(fd => fd.chunks.length > 0) || options.includeUnchanged)) {
             output += `\n${chalk.bold.blue(`=== ${file} ===`)}\n`;
             const rendered = await engine.render(result, format);
             output += rendered;
