@@ -102,11 +102,6 @@ ng-style-compare --repo /path/to/angular-project --branch1 main --branch2 featur
 - Track responsive typography using media queries
 
 ---
-*********************************************
-** Left off here 06.03.2025 ** 
-** Need to fix failing tests be
-   moving on to the next story **
-*********************************************
 ## Epic 4: Change Detection and Categorization
 
 ### Story 4.1: Style Diff Engine

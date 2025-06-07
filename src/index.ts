@@ -3,17 +3,29 @@
 import { program } from 'commander';
 import { GitBranchComparer } from './git-branch-comparer';
 import { ScssDiscoveryService } from './scss-discovery';
+import { DiffCommandHandler } from './cli/diff-commands';
+import { ConfigManager, globalConfig } from './cli/config-manager';
+import { createProgressHandler } from './cli/progress-handler';
 import chalk from 'chalk';
+
+// Initialize global configuration
+globalConfig.loadConfig().catch(() => {
+  // Ignore config loading errors, use defaults
+});
 
 program
   .name('ng-style-compare')
-  .description('Compare Angular styles between git branches')
+  .description('Compare Angular styles between git branches with advanced diff analysis')
   .version('1.0.0')
   .argument('<branch1>', 'First branch to compare')
   .argument('<branch2>', 'Second branch to compare')
   .option('--keep-temp', 'Keep temporary directories after comparison')
   .option('--verbose', 'Show detailed output')
   .option('--discover-scss', 'Discover and analyze SCSS files')
+  .option('--analyze-diff', 'Perform detailed style diff analysis')
+  .option('--preset <preset>', 'Diff analysis preset (fast, balanced, thorough, accessibility, performance)', 'balanced')
+  .option('--format <format>', 'Output format (terminal, json, html)', 'terminal')
+  .option('--output <path>', 'Output directory for diff results')
   .action(async (branch1: string, branch2: string, options) => {
     try {
       if (options.verbose) {
