@@ -63,16 +63,19 @@ describe('StyleDiffResult', () => {
   const mockStyleDiffResult: StyleDiffResult = {
     branch1: 'main',
     branch2: 'feature-branch',
-    fileDiffs: [],
-    summary: {
+    fileDiffs: [],    summary: {
       filesChanged: 0,
+      totalChanges: 0,
       linesAdded: 0,
       linesRemoved: 0,
       linesModified: 0,
       propertiesChanged: 0,
       highImpactChanges: 0,
       mediumImpactChanges: 0,
-      lowImpactChanges: 0
+      lowImpactChanges: 0,
+      addedLines: 0,
+      removedLines: 0,
+      modifiedLines: 0
     },
     metadata: {
       comparisonTime: new Date(),

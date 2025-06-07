@@ -12,7 +12,8 @@ import { StyleDiffResult, DiffChange, DiffChunk } from '../types';
 // Mock data for testing
 const createMockDiffResult = (): StyleDiffResult => ({
   branch1: 'main',
-  branch2: 'feature-branch',  summary: {
+  branch2: 'feature-branch',
+  summary: {
     filesChanged: 2,
     totalChanges: 5,
     linesAdded: 3,
@@ -26,15 +27,29 @@ const createMockDiffResult = (): StyleDiffResult => ({
     removedLines: 1,
     modifiedLines: 1
   },
+  metadata: {
+    comparisonTime: new Date(),
+    processingTimeMs: 150,
+    diffAlgorithm: 'myers',
+    version: '1.0.0',
+    options: {
+      viewMode: 'unified',
+      contextLines: 3,
+      groupRelatedChanges: true,
+      resolveVariables: true,
+      showOnlyChanges: false,
+      format: 'terminal'
+    }
+  },
   fileDiffs: [
-    {
-      filePath: './src/styles/components.scss',
-      fileType: 'component',
-      chunks: [
-        {
+    {      filePath: './src/styles/components.scss',
+      changeType: 'modified',
+      chunks: [{
           oldStart: 10,
+          oldLength: 3,
           oldLines: 3,
           newStart: 10,
+          newLength: 4,
           newLines: 4,
           context: { 
             selector: '.button',
@@ -65,19 +80,15 @@ const createMockDiffResult = (): StyleDiffResult => ({
                   impact: 'medium' as const
                 }
               ]
-            }
-          ]
+            }          ]
         }
       ],
-      metadata: {
-        variableChanges: [
-          {
-            variable: '$primary-blue',
-            oldValue: '#0066cc',
-            newValue: '#0077dd',
-            impact: 'high'
-          }
-        ]
+      summary: {
+        linesAdded: 1,
+        linesRemoved: 1,
+        linesModified: 0,
+        propertiesChanged: 2,
+        changeComplexity: 'medium' as const
       }
     }
   ]
@@ -94,8 +105,7 @@ describe('Diff Rendering System', () => {
     let renderer: TerminalRenderer;
 
     beforeEach(() => {      renderer = new TerminalRenderer({
-        useColors: false, // Disable colors for testing
-        includeMetadata: true
+        useColors: false // Disable colors for testing
       });
     });
 
@@ -350,18 +360,37 @@ describe('Diff Rendering System', () => {
   });
 
   describe('Performance and Edge Cases', () => {
-    it('should handle empty diff results', async () => {
-      const emptyDiff: StyleDiffResult = {
+    it('should handle empty diff results', async () => {      const emptyDiff: StyleDiffResult = {
         branch1: 'main',
         branch2: 'feature',
         summary: {
           filesChanged: 0,
           totalChanges: 0,
+          linesAdded: 0,
+          linesRemoved: 0,
+          linesModified: 0,
+          propertiesChanged: 0,
+          highImpactChanges: 0,
+          mediumImpactChanges: 0,
+          lowImpactChanges: 0,
           addedLines: 0,
           removedLines: 0,
           modifiedLines: 0
         },
-        fileDiffs: []
+        fileDiffs: [],        metadata: {
+          comparisonTime: new Date(),
+          processingTimeMs: 0,
+          diffAlgorithm: 'test',
+          version: '1.0.0',
+          options: {
+            viewMode: 'unified',
+            contextLines: 3,
+            groupRelatedChanges: true,
+            resolveVariables: true,
+            showOnlyChanges: false,
+            format: 'terminal'
+          }
+        }
       };
 
       const renderer = new DiffRenderer();
@@ -375,7 +404,7 @@ describe('Diff Rendering System', () => {
       const largeDiff = { ...mockDiffResult };
       largeDiff.fileDiffs[0].chunks[0].changes[0].content = 'x'.repeat(1000);
 
-      const renderer = new TerminalRenderer({ maxWidth: 120 });
+      const renderer = new TerminalRenderer({ useColors: true });
       const result = await renderer.render(largeDiff);
       
       expect(result.content).toContain('x'.repeat(117) + '...');

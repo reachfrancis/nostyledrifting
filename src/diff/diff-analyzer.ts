@@ -111,12 +111,13 @@ export class DiffAnalyzer {
         const change = changes[i];
         const lines = change.value.split('\n').filter(line => line !== '' || i < changes.length - 1);
 
-        if (change.added || change.removed) {
-          const chunk: DiffChunk = {
+        if (change.added || change.removed) {          const chunk: DiffChunk = {
             oldStart: oldLineNumber,
             oldLength: change.removed ? lines.length : 0,
+            oldLines: change.removed ? lines.length : 0,
             newStart: newLineNumber,
             newLength: change.added ? lines.length : 0,
+            newLines: change.added ? lines.length : 0,
             context: this.createChunkContext(oldLineNumber, newLineNumber, contextLines),
             changes: [{
               type: change.added ? 'added' : 'removed',
@@ -246,13 +247,13 @@ export class DiffAnalyzer {
             type: change.added ? 'added' : 'removed',
             lineNumber: change.added ? newLineNumber : oldLineNumber,
             content: change.value
-          };
-
-          const chunk: DiffChunk = {
+          };          const chunk: DiffChunk = {
             oldStart: oldLineNumber,
             oldLength: change.removed ? (change.count || 0) : 0,
+            oldLines: change.removed ? (change.count || 0) : 0,
             newStart: newLineNumber,
             newLength: change.added ? (change.count || 0) : 0,
+            newLines: change.added ? (change.count || 0) : 0,
             context: this.createChunkContext(oldLineNumber, newLineNumber, this.options.contextLines),
             changes: [diffChange]
           };
@@ -486,10 +487,7 @@ export class DiffAnalyzer {
         multiCategoryChanges: categories.length > 1,
         affectedCategories: categories,
         potentialConflicts: this.detectPotentialConflicts(propertyChanges)
-      };
-
-      return {
-        overallImpact: this.calculateOverallSemanticImpact(categorizedChanges),
+      };      return {
         categorizedChanges,
         accessibilityImpact,
         performanceImpact,
