@@ -99,6 +99,20 @@ export interface CssPropertyChange {
   category: 'typography' | 'layout' | 'color' | 'animation' | 'other';
   /** Impact level of this change */
   impact: 'high' | 'medium' | 'low';
+  /** Visual impact assessment */
+  visualImpact?: 'major' | 'moderate' | 'minor';
+  /** Performance impact assessment */
+  performanceImpact?: 'high' | 'medium' | 'low' | 'none';
+  /** Whether this property affects accessibility */
+  accessibility?: boolean;
+  /** Whether this property is responsive-related */
+  responsive?: boolean;
+  /** Properties related to this change */
+  relatedProperties?: string[];
+  /** Semantic impact of the change */
+  semanticImpact?: 'breaking' | 'visual' | 'functional' | 'cosmetic';
+  /** Selectors potentially affected by this change */
+  affectedSelectors?: string[];
 }
 
 /**
@@ -195,6 +209,61 @@ export interface ScssContext {
   imports: string[];
   /** Nesting path in SCSS structure */
   nestingPath: string[];
+  /** Selector complexity analysis */
+  selectorComplexity?: 'low' | 'medium' | 'high';
+  /** Media query context if applicable */
+  mediaQuery?: string;
+  /** Parent selector hierarchy */
+  parentSelectors?: string[];
+}
+
+/**
+ * Semantic analysis result for a diff operation
+ */
+export interface SemanticAnalysisResult {
+  /** Overall semantic impact of changes */
+  overallImpact: 'breaking' | 'major' | 'minor' | 'none';
+  /** Changes grouped by semantic category */
+  categorizedChanges: {
+    breaking: CssPropertyChange[];
+    visual: CssPropertyChange[];
+    functional: CssPropertyChange[];
+    cosmetic: CssPropertyChange[];
+  };
+  /** Accessibility impact analysis */
+  accessibilityImpact: {
+    hasImpact: boolean;
+    affectedProperties: string[];
+    contrastChanges: boolean;
+    focusChanges: boolean;
+  };
+  /** Performance impact analysis */
+  performanceImpact: {
+    hasImpact: boolean;
+    criticalChanges: string[];
+    animationChanges: string[];
+    layoutChanges: string[];
+  };
+  /** Cross-category change analysis */
+  crossCategoryAnalysis: {
+    multiCategoryChanges: boolean;
+    affectedCategories: string[];
+    potentialConflicts: string[];
+  };
+}
+
+/**
+ * Enhanced grouping of related diff changes with semantic context
+ */
+export interface SemanticDiffGroup extends DiffGroup {
+  /** Semantic analysis of the group */
+  semanticAnalysis: SemanticAnalysisResult;
+  /** SCSS context for the group */
+  scssContext: ScssContext;
+  /** Group complexity assessment */
+  complexity: 'low' | 'medium' | 'high';
+  /** Whether the group has breaking changes */
+  hasBreakingChanges: boolean;
 }
 
 /**
