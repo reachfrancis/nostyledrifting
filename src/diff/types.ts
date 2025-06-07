@@ -4,6 +4,26 @@
  */
 
 /**
+ * Analysis mode for diff operations
+ */
+export enum DiffAnalysisMode {
+  TEXT = 'text',
+  SCSS = 'scss',
+  SEMANTIC = 'semantic',
+  CONTEXT_AWARE = 'context-aware'
+}
+
+/**
+ * Render format for diff output
+ */
+export enum DiffRenderFormat {
+  TERMINAL = 'terminal',
+  HTML = 'html',
+  JSON = 'json',
+  MARKDOWN = 'markdown'
+}
+
+/**
  * Configuration options for diff operations
  */
 export interface DiffOptions {
@@ -67,6 +87,10 @@ export interface DiffChunk {
   changes: DiffChange[];
   /** Context information for this chunk */
   context: ChunkContext;
+  /** Legacy compatibility: Number of lines in old file */
+  oldLines: number;
+  /** Legacy compatibility: Number of lines in new file */
+  newLines: number;
 }
 
 /**
@@ -149,6 +173,14 @@ export interface DiffSummary {
   mediumImpactChanges: number;
   /** Number of low-impact changes */
   lowImpactChanges: number;
+  /** Total number of changes (legacy compatibility) */
+  totalChanges: number;
+  /** Added lines count (legacy compatibility) */
+  addedLines: number;
+  /** Removed lines count (legacy compatibility) */
+  removedLines: number;
+  /** Modified lines count (legacy compatibility) */
+  modifiedLines: number;
 }
 
 /**
@@ -237,12 +269,18 @@ export interface VariableDefinition {
   isGlobal: boolean;
   /** Other variables this variable depends on */
   dependencies: string[];
+  /** Usage locations of this variable */
+  usage: Array<{
+    filePath: string;
+    lineNumber: number;
+    context: string;
+  }>;
 }
 
 /**
  * Variable scope types
  */
-export type VariableScope = 'global' | 'file' | 'component' | 'mixin' | 'function';
+export type VariableScope = 'global' | 'file' | 'component' | 'mixin' | 'function' | 'local';
 
 /**
  * Variable resolution context for scoped lookups
@@ -258,6 +296,12 @@ export interface VariableResolutionContext {
   mixinContext?: string;
   /** Current function context */
   functionContext?: string;
+  /** Variables available in this context */
+  variables: Map<string, VariableDefinition>;
+  /** Import statements affecting this context */
+  imports: ScssImportInfo[];
+  /** Dependency graph for this context */
+  dependencies: Map<string, string[]>;
 }
 
 /**
@@ -282,6 +326,10 @@ export interface VariableImpactAnalysis {
   }>;
   /** Components potentially affected by variable changes */
   affectedComponents: string[];
+  /** All affected variables (for backwards compatibility) */
+  affectedVariables: VariableDefinition[];
+  /** Variable name being analyzed */
+  variableName?: string;
   /** Cascade effects of variable changes */
   cascadeEffects: Array<{
     variableName: string;
@@ -303,6 +351,8 @@ export interface SelectorContextChange {
   oldSelector?: string;
   /** New selector (for added/modified) */
   newSelector?: string;
+  /** Current selector (for context) */
+  selector?: string;
   /** Line number where change occurs */
   line: number;
   /** Impact assessment of the change */
@@ -328,6 +378,60 @@ export interface ImportDependencyChange {
 }
 
 /**
+ * SCSS import information
+ */
+export interface ScssImportInfo {
+  /** Import path or URL */
+  path: string;
+  /** Line number where import appears */
+  lineNumber: number;
+  /** Whether this is a partial import */
+  isPartial: boolean;
+  /** Variables or mixins imported */
+  importedItems?: string[];
+}
+
+/**
+ * CSS property context information
+ */
+export interface PropertyContext {
+  /** CSS selector context */
+  selector: string;
+  /** Property name */
+  property: string;
+  /** Property value */
+  value: string;
+  /** Line number */
+  lineNumber: number;
+  /** File path */
+  filePath: string;
+  /** Media query context */
+  mediaQuery?: string;
+  /** Nesting level */
+  nestingLevel: number;
+}
+
+/**
+ * Style difference analysis result
+ */
+export interface StyleDifference {
+  /** Type of difference */
+  type: 'added' | 'removed' | 'modified';
+  /** CSS property affected */
+  property: string;
+  /** Old value (for removed/modified) */
+  oldValue?: string;
+  /** New value (for added/modified) */
+  newValue?: string;
+  /** Selector context */
+  selector: string;
+  /** Impact level */
+  impact: 'low' | 'medium' | 'high';
+  /** Line number where change occurs */
+  lineNumber: number;
+}
+
+/**
  * Enhanced diff result with contextual analysis
  */
 export interface ContextualDiffResult {
@@ -337,6 +441,8 @@ export interface ContextualDiffResult {
   chunks: EnhancedDiffChunk[];
   /** Variable impact analysis */
   variableImpact: VariableImpactAnalysis;
+  /** Variable changes for backwards compatibility */
+  variableChanges?: VariableImpactAnalysis;
   /** Selector context changes */
   selectorChanges: SelectorContextChange[];
   /** Import dependency changes */
@@ -412,4 +518,221 @@ export function isStyleDiffResult(obj: any): obj is StyleDiffResult {
     Array.isArray(obj.fileDiffs) &&
     obj.summary &&
     obj.metadata;
+}
+
+/**
+ * Diff engine options for style analysis
+ */
+export interface StyleDiffOptions extends DiffOptions {
+  /** Analysis mode */
+  analysisMode: DiffAnalysisMode;
+  /** Performance mode */
+  performanceMode: 'fast' | 'balanced' | 'thorough';
+  /** Whether to include variable analysis */
+  includeVariables: boolean;
+  /** Whether to include import analysis */
+  includeImports: boolean;
+  /** Whether to perform semantic analysis */
+  semanticAnalysis: boolean;
+  /** Whether to ignore whitespace differences */
+  ignoreWhitespace: boolean;
+  /** Whether to ignore comment differences */
+  ignoreComments: boolean;
+  /** Whether to use strict mode */
+  strictMode: boolean;
+}
+
+/**
+ * Configuration presets for diff operations
+ */
+export type DiffPreset = 
+  | 'fast' 
+  | 'balanced' 
+  | 'thorough' 
+  | 'accessibility' 
+  | 'performance'
+  | 'memory-optimized' 
+  | 'development' 
+  | 'production'
+  | 'ci-cd'
+  | 'large-files';
+
+/**
+ * Configuration preset definition
+ */
+export interface DiffPresetConfig {
+  name: string;
+  description: string;
+  options: Partial<StyleDiffOptions>;
+}
+
+/**
+ * Engine-specific options
+ */
+export interface DiffEngineOptions {
+  /** Cache configuration */
+  cache: {
+    enabled: boolean;
+    maxSize: number;
+    ttl: number;
+  };
+  /** Performance settings */
+  performance: {
+    maxFileSize: number;
+    timeoutMs: number;
+    maxConcurrency: number;
+  };
+  /** Error handling configuration */
+  errorHandling: {
+    continueOnError: boolean;
+    maxRetries: number;
+    logErrors: boolean;
+  };
+}
+
+/**
+ * Validation result for diff operations
+ */
+export interface DiffValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
+ * Diff comparison configuration
+ */
+export interface DiffComparison {
+  file1: string;
+  file2: string;
+  options: StyleDiffOptions;
+}
+
+/**
+ * Engine performance metrics
+ */
+export interface EnginePerformanceMetrics {
+  startTime: number;
+  endTime: number;
+  duration: number;
+  filesProcessed: number;
+  cacheHits: number;
+  cacheMisses: number;
+  memoryUsage: {
+    peak: number;
+    current: number;
+  };
+}
+
+/**
+ * Cache statistics
+ */
+export interface DiffCacheStats {
+  hits: number;
+  misses: number;
+  size: number;
+  maxSize: number;
+  hitRate: number;
+}
+
+/**
+ * Diff context information
+ */
+export interface DiffContext {
+  branch1: string;
+  branch2: string;
+  repository: string;
+  timestamp: number;
+  user?: string;
+}
+
+/**
+ * Semantic analysis result
+ */
+export interface SemanticAnalysisResult {
+  groups: SemanticDiffGroup[];
+  patterns: string[];
+  impact: 'high' | 'medium' | 'low';
+}
+
+/**
+ * Semantic diff grouping
+ */
+export interface SemanticDiffGroup {
+  category: string;
+  changes: DiffChange[];
+  impact: 'high' | 'medium' | 'low';
+  description: string;
+}
+
+/**
+ * Render options for diff output
+ */
+export interface DiffRenderOptions {
+  /** Options for terminal rendering */
+  terminalOptions?: TerminalRenderOptions;
+  /** Options for HTML rendering */
+  htmlOptions?: HtmlRenderOptions;
+  /** Options for JSON rendering */
+  jsonOptions?: JsonRenderOptions;
+}
+
+/**
+ * Terminal-specific render options
+ */
+export interface TerminalRenderOptions {
+  /** Whether to use colors */
+  colors: boolean;
+  /** Maximum line width */
+  maxWidth: number;
+  /** Theme for colors */
+  theme: 'dark' | 'light' | 'auto';
+  /** Whether to include line numbers */
+  includeLineNumbers: boolean;
+}
+
+/**
+ * HTML-specific render options
+ */
+export interface HtmlRenderOptions {
+  /** Custom CSS styles */
+  customCss?: string;
+  /** Whether to include inline styles */
+  inlineStyles: boolean;
+  /** HTML template to use */
+  template?: string;
+  /** Whether to include statistics */
+  includeStatistics: boolean;
+  /** Whether to include metadata */
+  includeMetadata: boolean;
+  /** Whether to include line numbers */
+  includeLineNumbers: boolean;
+}
+
+/**
+ * JSON-specific render options
+ */
+export interface JsonRenderOptions {
+  /** Whether to pretty-print the JSON */
+  pretty: boolean;
+  /** Fields to include in the output */
+  includeFields?: string[];
+  /** Fields to exclude from the output */
+  excludeFields?: string[];
+  /** Whether to include metadata */
+  includeMetadata: boolean;
+  /** Whether to include content */
+  includeContent: boolean;
+}
+
+/**
+ * Rendered diff result
+ */
+export interface RenderedDiff {
+  format: DiffRenderFormat;
+  content: string;
+  metadata: {
+    generatedAt: number;
+    options: DiffRenderOptions;
+  };
 }

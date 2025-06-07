@@ -12,10 +12,16 @@ import { StyleDiffResult, DiffChange, DiffChunk } from '../types';
 // Mock data for testing
 const createMockDiffResult = (): StyleDiffResult => ({
   branch1: 'main',
-  branch2: 'feature-branch',
-  summary: {
+  branch2: 'feature-branch',  summary: {
     filesChanged: 2,
     totalChanges: 5,
+    linesAdded: 3,
+    linesRemoved: 1,
+    linesModified: 1,
+    propertiesChanged: 0,
+    highImpactChanges: 0,
+    mediumImpactChanges: 0,
+    lowImpactChanges: 0,
     addedLines: 3,
     removedLines: 1,
     modifiedLines: 1
@@ -30,35 +36,33 @@ const createMockDiffResult = (): StyleDiffResult => ({
           oldLines: 3,
           newStart: 10,
           newLines: 4,
-          context: { selector: '.button' },
+          context: { 
+            selector: '.button',
+            surroundingLines: 3,
+            nestingLevel: 1
+          },
           changes: [
-            {
-              type: 'add' as const,
+            {              type: 'added' as const,
               content: '  color: $primary-blue;',
               lineNumber: 11,
-              cssPropertyChanges: [
+              cssProperties: [
                 {
-                  property: 'color',
-                  oldValue: undefined,
+                  property: 'color',                  oldValue: undefined,
                   newValue: '$primary-blue',
                   category: 'color',
-                  impact: 'medium' as const,
-                  relationships: []
+                  impact: 'medium' as const
                 }
               ]
             },
-            {
-              type: 'remove' as const,
+            {              type: 'removed' as const,
               content: '  color: #333;',
               lineNumber: 12,
-              cssPropertyChanges: [
-                {
-                  property: 'color',
+              cssProperties: [
+                {                  property: 'color',
                   oldValue: '#333',
                   newValue: undefined,
                   category: 'color',
-                  impact: 'medium' as const,
-                  relationships: []
+                  impact: 'medium' as const
                 }
               ]
             }
@@ -89,10 +93,8 @@ describe('Diff Rendering System', () => {
   describe('TerminalRenderer', () => {
     let renderer: TerminalRenderer;
 
-    beforeEach(() => {
-      renderer = new TerminalRenderer({
+    beforeEach(() => {      renderer = new TerminalRenderer({
         useColors: false, // Disable colors for testing
-        includeLineNumbers: true,
         includeMetadata: true
       });
     });

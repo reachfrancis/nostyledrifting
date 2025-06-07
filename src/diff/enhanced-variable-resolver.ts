@@ -6,8 +6,7 @@
 import { VariableResolver } from '../typography/variable-resolver';
 import {
   VariableDefinition,
-  VariableScope,
-  VariableResolutionContext,
+  VariableScope,  VariableResolutionContext,
   VariableDependencyGraph,
   VariableImpactAnalysis,
   ScssImportInfo,
@@ -31,13 +30,13 @@ export class EnhancedVariableResolver extends VariableResolver {
   public async analyzeContent(
     content: string,
     filePath: string,
-    imports: ScssImportInfo[] = []
-  ): Promise<VariableResolutionContext> {
+    imports: ScssImportInfo[] = []  ): Promise<VariableResolutionContext> {
     this.currentContext = {
       filePath,
+      selector: null,
+      mediaQuery: null,
       imports,
       variables: new Map(),
-      scopes: [],
       dependencies: new Map()
     };
 
@@ -53,12 +52,12 @@ export class EnhancedVariableResolver extends VariableResolver {
       
       // Detect circular dependencies
       this.detectCircularDependencies();
-      
-      return this.currentContext;
+        return this.currentContext;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       throw new DiffError(
         DiffErrorType.VARIABLE_RESOLUTION_FAILED,
-        `Failed to analyze SCSS content: ${error.message}`,
+        `Failed to analyze SCSS content: ${errorMessage}`,
         filePath,
         { originalError: error }
       );
@@ -115,7 +114,6 @@ export class EnhancedVariableResolver extends VariableResolver {
       dependencyChain
     };
   }
-
   /**
    * Analyzes the impact of variable changes on dependent properties
    */
@@ -124,29 +122,49 @@ export class EnhancedVariableResolver extends VariableResolver {
     newValue: string
   ): VariableImpactAnalysis {
     const dependencies = this.dependencyGraph.get(variableName) || [];
-    const affectedProperties: PropertyContext[] = [];
-    const cascadingVariables: string[] = [];
+    const definition = this.variableDefinitions.get(variableName);
+    
+    if (!definition) {
+      return {
+        addedVariables: [],
+        removedVariables: [],
+        modifiedVariables: [],
+        affectedComponents: [],
+        affectedVariables: [],
+        cascadeEffects: [],
+        recommendations: [`Variable ${variableName} not found`]
+      };
+    }
 
-    // Find all properties that use this variable
-    for (const [defName, definition] of this.variableDefinitions) {
-      if (definition.dependencies.includes(variableName)) {
+    const cascadingVariables: string[] = [];
+    const affectedVariables: VariableDefinition[] = [];
+
+    // Find all variables that depend on this variable
+    for (const [defName, def] of this.variableDefinitions) {
+      if (def.dependencies.includes(variableName)) {
         cascadingVariables.push(defName);
-        
-        // Find properties that use the dependent variable
-        affectedProperties.push(...this.findPropertiesUsingVariable(defName));
+        affectedVariables.push(def);
       }
     }
 
-    // Direct property usage
-    affectedProperties.push(...this.findPropertiesUsingVariable(variableName));
-
     return {
-      variableName,
-      directDependents: dependencies,
-      cascadingVariables,
-      affectedProperties: this.deduplicatePropertyContexts(affectedProperties),
-      impactScope: this.calculateImpactScope(affectedProperties),
-      riskLevel: this.assessRiskLevel(affectedProperties, cascadingVariables)
+      addedVariables: [],
+      removedVariables: [],
+      modifiedVariables: [{
+        variable: definition,
+        oldValue: definition.value,
+        newValue,
+        impact: this.assessVariableChangeImpact(definition, newValue)
+      }],
+      affectedComponents: this.getAffectedComponents(affectedVariables),
+      affectedVariables,
+      cascadeEffects: [{
+        variableName,
+        affectedVariables: cascadingVariables,
+        cascadeDepth: this.calculateCascadeDepth(variableName),
+        impactLevel: this.assessCascadeImpact(cascadingVariables)
+      }],
+      recommendations: this.generateRecommendations(variableName, definition, newValue)
     };
   }
 
@@ -232,9 +250,7 @@ export class EnhancedVariableResolver extends VariableResolver {
       const lineNumber = this.getLineNumber(content, match.index);
       
       const dependencies = this.extractVariableDependencies(value);
-      const scope = this.determineVariableScope(content, match.index);
-
-      const definition: VariableDefinition = {
+      const scope = this.determineVariableScope(content, match.index);      const definition: VariableDefinition = {
         name,
         value: value.trim(),
         filePath,
@@ -242,6 +258,7 @@ export class EnhancedVariableResolver extends VariableResolver {
         scope,
         dependencies,
         isDefault: value.includes('!default'),
+        isGlobal: value.includes('!global') || scope === 'global',
         usage: []
       };
 
@@ -432,9 +449,20 @@ export class EnhancedVariableResolver extends VariableResolver {
   /**
    * Finds properties that use a specific variable
    */
-  private findPropertiesUsingVariable(variableName: string): PropertyContext[] {
-    const definition = this.variableDefinitions.get(variableName);
-    return definition?.usage || [];
+  private findPropertiesUsingVariable(variableName: string): PropertyContext[] {    const definition = this.variableDefinitions.get(variableName);
+    if (!definition) {
+      return [];
+    }
+
+    // Convert usage to PropertyContext format
+    return definition.usage.map(usage => ({
+      selector: usage.context,
+      property: 'unknown',
+      value: 'unknown',
+      lineNumber: usage.lineNumber,
+      nestingLevel: 0,
+      filePath: usage.filePath
+    }));
   }
 
   /**
@@ -476,6 +504,69 @@ export class EnhancedVariableResolver extends VariableResolver {
   }
 
   /**
+   * Assesses the impact level of a variable change
+   */
+  private assessVariableChangeImpact(
+    definition: VariableDefinition,
+    newValue: string
+  ): 'low' | 'medium' | 'high' {
+    // Simple heuristic based on variable usage and value change
+    const usageCount = definition.usage.length;
+    const valueChanged = definition.value !== newValue;
+    
+    if (!valueChanged) return 'low';
+    if (usageCount === 0) return 'medium';
+    return 'high';
+  }
+
+  /**
+   * Generates recommendations for variable changes
+   */
+  private generateRecommendations(
+    variableName: string,
+    definition: VariableDefinition,
+    newValue: string
+  ): string[] {
+    const recommendations: string[] = [];
+    
+    // Example heuristic: recommend changing default variables to explicit values
+    if (definition.isDefault) {
+      recommendations.push(`Consider removing '!default' from ${variableName} for explicit value assignment`);
+    }
+    
+    // Check for cascading effects
+    const cascadingVariables = this.getDependencyChain(variableName);
+    if (cascadingVariables.length > 0) {
+      recommendations.push(`Changing ${variableName} may affect the following variables: ${cascadingVariables.join(', ')}`);
+    }
+    
+    return recommendations;
+  }
+
+  /**
+   * Compares two variable definitions for equality
+   */
+  private areVariableDefinitionsEqual(
+    def1: VariableDefinition,
+    def2: VariableDefinition
+  ): boolean {
+    return (
+      def1.value === def2.value &&
+      def1.scope === def2.scope &&
+      def1.isDefault === def2.isDefault &&
+      def1.isGlobal === def2.isGlobal &&
+      JSON.stringify(def1.dependencies) === JSON.stringify(def2.dependencies)
+    );
+  }
+
+  /**
+   * Gets the line number for a position in content
+   */
+  private getLineNumber(content: string, position: number): number {
+    return content.substring(0, position).split('\n').length;
+  }
+
+  /**
    * Extracts variable dependencies from a value string
    */
   private extractVariableDependencies(value: string): string[] {
@@ -511,28 +602,6 @@ export class EnhancedVariableResolver extends VariableResolver {
     }
     
     return 'global';
-  }
-
-  /**
-   * Gets the line number for a position in content
-   */
-  private getLineNumber(content: string, position: number): number {
-    return content.substring(0, position).split('\n').length;
-  }
-
-  /**
-   * Compares two variable definitions for equality
-   */
-  private areVariableDefinitionsEqual(
-    def1: VariableDefinition,
-    def2: VariableDefinition
-  ): boolean {
-    return (
-      def1.value === def2.value &&
-      def1.scope === def2.scope &&
-      def1.isDefault === def2.isDefault &&
-      JSON.stringify(def1.dependencies) === JSON.stringify(def2.dependencies)
-    );
   }
 
   /**
