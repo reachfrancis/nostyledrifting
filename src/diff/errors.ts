@@ -12,7 +12,9 @@ export enum DiffErrorType {
   ANALYSIS_TIMEOUT = 'ANALYSIS_TIMEOUT',
   INVALID_DIFF_OPTIONS = 'INVALID_DIFF_OPTIONS',
   MEMORY_LIMIT_EXCEEDED = 'MEMORY_LIMIT_EXCEEDED',
-  UNSUPPORTED_FILE_TYPE = 'UNSUPPORTED_FILE_TYPE'
+  UNSUPPORTED_FILE_TYPE = 'UNSUPPORTED_FILE_TYPE',
+  CIRCULAR_DEPENDENCY = 'CIRCULAR_DEPENDENCY',
+  VARIABLE_RESOLUTION_FAILED = 'VARIABLE_RESOLUTION_FAILED'
 }
 
 /**
@@ -89,5 +91,18 @@ export class DiffUnsupportedFileError extends DiffError {
   constructor(message: string, filePath?: string, context?: any) {
     super(DiffErrorType.UNSUPPORTED_FILE_TYPE, message, filePath, context);
     this.name = 'DiffUnsupportedFileError';
+  }
+}
+
+/**
+ * Error thrown when circular dependencies are detected in variable resolution
+ */
+export class CircularDependencyError extends Error {
+  public readonly dependencyChain: string[];
+  
+  constructor(message: string, dependencyChain: string[] = []) {
+    super(message);
+    this.name = 'CircularDependencyError';
+    this.dependencyChain = dependencyChain;
   }
 }

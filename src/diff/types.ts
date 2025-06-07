@@ -218,52 +218,161 @@ export interface ScssContext {
 }
 
 /**
- * Semantic analysis result for a diff operation
+ * SCSS variable definition with full context information
  */
-export interface SemanticAnalysisResult {
-  /** Overall semantic impact of changes */
-  overallImpact: 'breaking' | 'major' | 'minor' | 'none';
-  /** Changes grouped by semantic category */
-  categorizedChanges: {
-    breaking: CssPropertyChange[];
-    visual: CssPropertyChange[];
-    functional: CssPropertyChange[];
-    cosmetic: CssPropertyChange[];
-  };
-  /** Accessibility impact analysis */
-  accessibilityImpact: {
-    hasImpact: boolean;
-    affectedProperties: string[];
-    contrastChanges: boolean;
-    focusChanges: boolean;
-  };
-  /** Performance impact analysis */
-  performanceImpact: {
-    hasImpact: boolean;
-    criticalChanges: string[];
-    animationChanges: string[];
-    layoutChanges: string[];
-  };
-  /** Cross-category change analysis */
-  crossCategoryAnalysis: {
-    multiCategoryChanges: boolean;
-    affectedCategories: string[];
-    potentialConflicts: string[];
-  };
+export interface VariableDefinition {
+  /** Variable name without $ prefix */
+  name: string;
+  /** Variable value as string */
+  value: string;
+  /** File path where variable is defined */
+  filePath: string;
+  /** Line number in the file */
+  lineNumber: number;
+  /** Variable scope */
+  scope: VariableScope;
+  /** Whether variable has !default flag */
+  isDefault: boolean;
+  /** Whether variable has !global flag */
+  isGlobal: boolean;
+  /** Other variables this variable depends on */
+  dependencies: string[];
 }
 
 /**
- * Enhanced grouping of related diff changes with semantic context
+ * Variable scope types
  */
-export interface SemanticDiffGroup extends DiffGroup {
-  /** Semantic analysis of the group */
-  semanticAnalysis: SemanticAnalysisResult;
-  /** SCSS context for the group */
-  scssContext: ScssContext;
-  /** Group complexity assessment */
-  complexity: 'low' | 'medium' | 'high';
-  /** Whether the group has breaking changes */
-  hasBreakingChanges: boolean;
+export type VariableScope = 'global' | 'file' | 'component' | 'mixin' | 'function';
+
+/**
+ * Variable resolution context for scoped lookups
+ */
+export interface VariableResolutionContext {
+  /** Current file path */
+  filePath: string;
+  /** Current CSS selector context */
+  selector: string | null;
+  /** Current media query context */
+  mediaQuery: string | null;
+  /** Current mixin context */
+  mixinContext?: string;
+  /** Current function context */
+  functionContext?: string;
+}
+
+/**
+ * Variable dependency graph mapping variable names to their dependencies
+ */
+export type VariableDependencyGraph = Map<string, string[]>;
+
+/**
+ * Analysis of variable impact when changed
+ */
+export interface VariableImpactAnalysis {
+  /** Variables added in the new version */
+  addedVariables: VariableDefinition[];
+  /** Variables removed in the new version */
+  removedVariables: VariableDefinition[];
+  /** Variables modified in the new version */
+  modifiedVariables: Array<{
+    variable: VariableDefinition;
+    oldValue: any;
+    newValue: any;
+    impact: 'low' | 'medium' | 'high';
+  }>;
+  /** Components potentially affected by variable changes */
+  affectedComponents: string[];
+  /** Cascade effects of variable changes */
+  cascadeEffects: Array<{
+    variableName: string;
+    affectedVariables: string[];
+    cascadeDepth: number;
+    impactLevel: 'low' | 'medium' | 'high';
+  }>;
+  /** Recommendations for handling variable changes */
+  recommendations: string[];
+}
+
+/**
+ * Analysis of selector context changes
+ */
+export interface SelectorContextChange {
+  /** Type of selector change */
+  type: 'added' | 'removed' | 'modified';
+  /** Original selector (for removed/modified) */
+  oldSelector?: string;
+  /** New selector (for added/modified) */
+  newSelector?: string;
+  /** Line number where change occurs */
+  line: number;
+  /** Impact assessment of the change */
+  impact: 'low' | 'medium' | 'high';
+  /** Human-readable reasoning for the change */
+  reasoning: string;
+}
+
+/**
+ * Analysis of import dependency changes
+ */
+export interface ImportDependencyChange {
+  /** Type of import change */
+  type: 'added' | 'removed' | 'modified';
+  /** Import path */
+  importPath: string;
+  /** Line number where change occurs */
+  line: number;
+  /** Impact assessment of the change */
+  impact: 'low' | 'medium' | 'high';
+  /** Human-readable reasoning for the change */
+  reasoning: string;
+}
+
+/**
+ * Enhanced diff result with contextual analysis
+ */
+export interface ContextualDiffResult {
+  /** File path being analyzed */
+  filePath: string;
+  /** Enhanced diff chunks with variable context */
+  chunks: EnhancedDiffChunk[];
+  /** Variable impact analysis */
+  variableImpact: VariableImpactAnalysis;
+  /** Selector context changes */
+  selectorChanges: SelectorContextChange[];
+  /** Import dependency changes */
+  importChanges: ImportDependencyChange[];
+  /** Contextual summary */
+  summary: ContextualDiffSummary;
+}
+
+/**
+ * Enhanced diff chunk with variable resolution context
+ */
+export interface EnhancedDiffChunk extends DiffChunk {
+  /** Variable definitions affected by this chunk */
+  affectedVariables: VariableDefinition[];
+  /** Variables resolved in this chunk's context */
+  resolvedVariables: Map<string, any>;
+  /** Import statements affecting this chunk */
+  importContext: string[];
+  /** Mixin usage in this chunk */
+  mixinUsage: string[];
+}
+
+/**
+ * Contextual summary including variable and dependency analysis
+ */
+export interface ContextualDiffSummary extends FileDiffSummary {
+  /** Number of variables changed */
+  variablesChanged: number;
+  /** Number of high-impact variable changes */
+  highImpactVariableChanges: number;
+  /** Number of import dependency changes */
+  importChanges: number;
+  /** Number of selector context changes */
+  selectorChanges: number;
+  /** Overall contextual complexity */
+  contextualComplexity: 'low' | 'medium' | 'high';
 }
 
 /**
