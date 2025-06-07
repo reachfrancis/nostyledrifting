@@ -487,11 +487,45 @@ export class DiffAnalyzer {
         multiCategoryChanges: categories.length > 1,
         affectedCategories: categories,
         potentialConflicts: this.detectPotentialConflicts(propertyChanges)
-      };      return {
-        categorizedChanges,
-        accessibilityImpact,
-        performanceImpact,
-        crossCategoryAnalysis
+      };      // Create semantic groups from categorized changes
+      const groups: SemanticDiffGroup[] = [
+        {
+          category: 'breaking',
+          changes: fileDiffResult.chunks.flatMap(chunk => chunk.changes.filter(change => 
+            change.cssProperties?.some(prop => prop.semanticImpact === 'breaking'))),
+          impact: 'high' as const,
+          description: 'Breaking changes that affect functionality'
+        },
+        {
+          category: 'visual',
+          changes: fileDiffResult.chunks.flatMap(chunk => chunk.changes.filter(change => 
+            change.cssProperties?.some(prop => prop.semanticImpact === 'visual'))),
+          impact: 'medium' as const,
+          description: 'Visual changes that affect appearance'
+        },
+        {
+          category: 'cosmetic',
+          changes: fileDiffResult.chunks.flatMap(chunk => chunk.changes.filter(change => 
+            change.cssProperties?.some(prop => prop.semanticImpact === 'cosmetic'))),
+          impact: 'low' as const,
+          description: 'Cosmetic changes with minimal impact'
+        }
+      ].filter(group => group.changes.length > 0);
+
+      // Extract patterns from the changes
+      const patterns: string[] = [];
+      if (propertyChanges.some(c => c.category === 'color')) patterns.push('Color changes detected');
+      if (propertyChanges.some(c => c.category === 'layout')) patterns.push('Layout changes detected');
+      if (propertyChanges.some(c => c.category === 'animation')) patterns.push('Animation changes detected');
+
+      // Calculate overall impact
+      const impact = propertyChanges.some(c => c.semanticImpact === 'breaking') ? 'high' :
+                    propertyChanges.some(c => c.semanticImpact === 'visual') ? 'medium' : 'low';
+
+      return {
+        groups,
+        patterns,
+        impact: impact as 'high' | 'medium' | 'low'
       };
     } catch (error) {
       throw new DiffAnalysisError(

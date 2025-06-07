@@ -1,10 +1,10 @@
 import { StyleDiffEngine } from '../diff/style-diff-engine';
 import { StyleDiffEngineFactory } from '../diff/engine-factory';
-import { DiffRenderFormat } from '../diff/types';
+import { DiffRenderFormat, DiffAnalysisMode, StyleDiffOptions } from '../diff/types';
 import chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { glob } from 'glob';
+import { sync as globSync } from 'glob';
 
 export interface DiffCommandOptions {
   preset: string;
@@ -81,14 +81,22 @@ export class DiffCommandHandler {
       }
 
       // Create engine with specified preset
-      const engine = StyleDiffEngineFactory.createEngine(options.preset as any);
-
-      // Configure engine options
-      const diffOptions = {
-        analysisMode: options.semantic ? 'semantic' : 'text',
-        contextDepth: parseInt(options.context),
-        includeVariables: options.variables,
-        includeImports: options.imports
+      const engine = StyleDiffEngineFactory.createEngine(options.preset as any);      // Configure engine options
+      const diffOptions: Partial<StyleDiffOptions> = {
+        analysisMode: (options.semantic ? 'semantic' : 'text') as DiffAnalysisMode,
+        contextLines: parseInt(options.context),
+        includeVariables: options.variables || false,
+        includeImports: options.imports || false,
+        performanceMode: 'balanced',
+        semanticAnalysis: true,
+        ignoreWhitespace: false,
+        ignoreComments: false,
+        strictMode: false,
+        viewMode: 'unified',
+        groupRelatedChanges: true,
+        resolveVariables: true,
+        showOnlyChanges: false,
+        format: 'terminal'
       };
 
       // Perform comparison
@@ -107,21 +115,17 @@ export class DiffCommandHandler {
         console.log(chalk.green(`✓ Diff saved to: ${options.output}`));
       } else {
         console.log(rendered);
-      }
-
-      // Show metrics if verbose
+      }      // Show metrics if verbose
       if (options.verbose) {
         const metrics = engine.getPerformanceMetrics();
         console.log(chalk.blue('\n📊 Performance Metrics:'));
-        console.log(`  Processing time: ${metrics.averageProcessingTime}ms`);
-        console.log(`  Cache hit rate: ${(metrics.cacheHitRate * 100).toFixed(1)}%`);
+        console.log(`  Processing time: ${metrics.duration}ms`);
+        console.log(`  Cache hits: ${metrics.cacheHits}`);
         console.log(`  Memory usage: ${(metrics.memoryUsage.current / 1024 / 1024).toFixed(1)}MB`);
-      }
-
-    } catch (error) {
-      console.error(chalk.red('❌ Diff analysis failed:'), error.message);
+      }    } catch (error) {
+      console.error(chalk.red('❌ Diff analysis failed:'), (error as Error).message);
       if (options.verbose) {
-        console.error(chalk.gray('Stack trace:'), error.stack);
+        console.error(chalk.gray('Stack trace:'), (error as Error).stack);
       }
       process.exit(1);
     }
@@ -174,9 +178,8 @@ export class DiffCommandHandler {
             comparison.file2, 
             comparison.options
           );
-          results.push({ ...result, name: config_item.name });
-        } catch (error) {
-          console.error(chalk.red(`\n❌ Failed to compare ${config_item.name}: ${error.message}`));
+          results.push({ ...result, name: config_item.name });        } catch (error) {
+          console.error(chalk.red(`\n❌ Failed to compare ${config_item.name}: ${(error as Error).message}`));
           if (!options.continueOnError) {
             throw error;
           }
@@ -214,10 +217,8 @@ export class DiffCommandHandler {
       await fs.writeFile(summaryFile, JSON.stringify(summary, null, 2));
 
       console.log(chalk.green(`🎉 Batch diff completed: ${results.length}/${total} comparisons successful`));
-      console.log(chalk.cyan(`📄 Results saved to: ${outputDir}`));
-
-    } catch (error) {
-      console.error(chalk.red('❌ Batch diff failed:'), error.message);
+      console.log(chalk.cyan(`📄 Results saved to: ${outputDir}`));    } catch (error) {
+      console.error(chalk.red('❌ Batch diff failed:'), (error as Error).message);
       process.exit(1);
     }
   }
@@ -235,21 +236,17 @@ export class DiffCommandHandler {
       await Promise.all([
         fs.access(dir1, fs.constants.F_OK),
         fs.access(dir2, fs.constants.F_OK)
-      ]);
-
-      // Find matching files in both directories
+      ]);      // Find matching files in both directories
       const pattern = options.pattern || '**/*.scss';
-      const [files1, files2] = await Promise.all([
-        glob(pattern, { cwd: dir1 }),
-        glob(pattern, { cwd: dir2 })
-      ]);
+      const files1 = globSync(pattern, { cwd: dir1, absolute: false });
+      const files2 = globSync(pattern, { cwd: dir2, absolute: false });
 
       // Find common files
-      const commonFiles = files1.filter(file => files2.includes(file));
+      const commonFiles = files1.filter((file: string) => files2.includes(file));
       const excludePatterns = options.exclude || [];
       
-      const filesToCompare = commonFiles.filter(file => {
-        return !excludePatterns.some(pattern => file.match(new RegExp(pattern)));
+      const filesToCompare = commonFiles.filter((file: string) => {
+        return !excludePatterns.some((pattern: string) => file.match(new RegExp(pattern)));
       });
 
       if (options.verbose) {
@@ -294,9 +291,8 @@ export class DiffCommandHandler {
             comparison.file2, 
             comparison.options
           );
-          results.push({ ...result, filePath: file });
-        } catch (error) {
-          console.error(chalk.red(`\n❌ Failed to compare ${file}: ${error.message}`));
+          results.push({ ...result, filePath: file });        } catch (error) {
+          console.error(chalk.red(`\n❌ Failed to compare ${file}: ${(error as Error).message}`));
           if (!options.continueOnError) {
             throw error;
           }
@@ -356,10 +352,8 @@ export class DiffCommandHandler {
         }, null, 2));
         
         console.log(chalk.cyan(`📄 Detailed results saved to: ${resultsFile}`));
-      }
-
-    } catch (error) {
-      console.error(chalk.red('❌ Directory diff failed:'), error.message);
+      }    } catch (error) {
+      console.error(chalk.red('❌ Directory diff failed:'), (error as Error).message);
       process.exit(1);
     }
   }
@@ -402,10 +396,8 @@ export class DiffCommandHandler {
         console.log(`  Patterns found: ${analysis.patterns.length}`);
         console.log(`  Recommendations: ${analysis.recommendations.length}`);
         console.log(`  Semantic changes: ${analysis.semanticChanges.length}`);
-      }
-
-    } catch (error) {
-      console.error(chalk.red('❌ Diff analysis failed:'), error.message);
+      }    } catch (error) {
+      console.error(chalk.red('❌ Diff analysis failed:'), (error as Error).message);
       process.exit(1);
     }
   }
@@ -566,14 +558,12 @@ export class DiffCommandHandler {
     // Analyze complexity
     let complexity: 'low' | 'medium' | 'high' = 'low';
     if (totalChanges > 20) complexity = 'high';
-    else if (totalChanges > 5) complexity = 'medium';
-
-    // Analyze impact
+    else if (totalChanges > 5) complexity = 'medium';    // Analyze impact
     let impact: 'low' | 'medium' | 'high' = 'low';
-    const hasVariableChanges = chunks.some(chunk => 
+    const hasVariableChanges = chunks.some((chunk: any) => 
       chunk.content && chunk.content.includes('$')
     );
-    const hasImportChanges = chunks.some(chunk => 
+    const hasImportChanges = chunks.some((chunk: any) => 
       chunk.content && chunk.content.includes('@import')
     );
     
@@ -584,8 +574,8 @@ export class DiffCommandHandler {
     const patterns = [];
     if (hasVariableChanges) patterns.push('Variable modifications detected');
     if (hasImportChanges) patterns.push('Import structure changes detected');
-    if (chunks.some(c => c.content?.includes('@media'))) patterns.push('Media query changes detected');
-    if (chunks.some(c => c.content?.includes('color'))) patterns.push('Color changes detected');
+    if (chunks.some((c: any) => c.content?.includes('@media'))) patterns.push('Media query changes detected');
+    if (chunks.some((c: any) => c.content?.includes('color'))) patterns.push('Color changes detected');
 
     // Generate recommendations
     const recommendations = [];

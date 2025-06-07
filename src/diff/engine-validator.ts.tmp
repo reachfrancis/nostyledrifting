@@ -79,7 +79,7 @@ export class EngineValidator {
           suggestions.push(...contentValidation.suggestions);
 
         } catch (error) {
-          warnings.push(`Could not read file contents for validation: ${(error as Error).message}`);
+          warnings.push(`Could not read file contents for validation: ${error.message}`);
         }
       }    } catch (error) {
       errors.push(`File validation failed: ${(error as Error).message}`);
@@ -168,7 +168,7 @@ export class EngineValidator {
 
     if (!options) {
       errors.push('Options object is required');
-      return { valid: false, errors, warnings };
+      return { valid: false, errors, warnings, suggestions };
     }
 
     // Validate analysis mode
@@ -244,7 +244,7 @@ export class EngineValidator {
 
     if (!Array.isArray(comparisons)) {
       errors.push('Comparisons must be an array');
-      return { valid: false, errors, warnings };
+      return { valid: false, errors, warnings, suggestions };
     }
 
     if (comparisons.length === 0) {

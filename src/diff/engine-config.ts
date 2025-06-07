@@ -145,7 +145,7 @@ export class EngineConfigManager {
     
     // Validate the updated configuration
     const validation = this.validateConfig();
-    if (!validation.isValid) {
+    if (!validation.valid) {
       throw new Error(`Configuration update invalid: ${validation.errors.join(', ')}`);
     }
   }
@@ -225,13 +225,10 @@ export class EngineConfigManager {
     // Integration warnings
     if (this.config.integration.gitEnabled && !this.config.validation.checkFileAccess) {
       warnings.push('Git integration works best with file access validation enabled');
-    }
-
-    return {
-      isValid: errors.length === 0,
+    }    return {
+      valid: errors.length === 0,
       errors,
-      warnings,
-      suggestions
+      warnings
     };
   }
 
