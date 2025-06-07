@@ -17,7 +17,7 @@ import {
   DiffCacheStats,
   DiffValidationResult
 } from './types';
-import { DiffEngineError } from './errors';
+import { DiffFileError } from './errors';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { createHash } from 'crypto';
@@ -62,11 +62,10 @@ export class StyleDiffEngine {
     const operationId = `compareFiles_${Date.now()}`;
     this.performanceTracker.startOperation(operationId);
 
-    try {
-      // Validate inputs
-      const validation = await this.validator.validateFiles(file1, file2);
-      if (!validation.isValid) {
-        throw new DiffEngineError(`Validation failed: ${validation.errors.join(', ')}`);
+    try {      // Validate inputs
+      const validation = await EngineValidator.validateFiles(file1, file2);
+      if (!validation.valid) {
+        throw new DiffFileError(`Validation failed: ${validation.errors.join(', ')}`);
       }
 
       // Check cache first
@@ -82,13 +81,9 @@ export class StyleDiffEngine {
       const [content1, content2] = await Promise.all([
         fs.readFile(file1, 'utf-8'),
         fs.readFile(file2, 'utf-8')
-      ]);
-
-      // Perform comparison
+      ]);      // Perform comparison
       const result = await this.compareContent(content1, content2, {
-        ...options,
-        filePath1: file1,
-        filePath2: file2
+        ...options
       });
 
       // Cache the result
@@ -127,10 +122,9 @@ export class StyleDiffEngine {
     this.performanceTracker.startOperation(operationId);
 
     try {
-      // Validate content
-      const validation = await this.validator.validateContent(content1, content2);
-      if (!validation.isValid) {
-        throw new DiffEngineError(`Content validation failed: ${validation.errors.join(', ')}`);
+      // Validate content      const validation = await EngineValidator.validateContent(content1, content2);
+      if (!validation.valid) {
+        throw new DiffFileError(`Content validation failed: ${validation.errors.join(', ')}`);
       }
 
       // Check cache
@@ -215,7 +209,7 @@ export class StyleDiffEngine {
 
     } catch (error) {
       this.performanceTracker.recordError();
-      throw new DiffEngineError(`Branch comparison failed: ${error.message}`, error);
+      throw new DiffFileError(`Branch comparison failed: ${(error as Error).message}`, undefined, error);
     } finally {
       this.performanceTracker.endOperation(operationId);
     }
@@ -232,10 +226,9 @@ export class StyleDiffEngine {
     this.performanceTracker.startOperation(operationId);
 
     try {
-      // Validate batch operation
-      const validation = this.validator.validateBatchOperation(comparisons);
-      if (!validation.isValid) {
-        throw new DiffEngineError(`Batch validation failed: ${validation.errors.join(', ')}`);
+      // Validate batch operation      const validation = EngineValidator.validateBatchOperation(comparisons);
+      if (!validation.valid) {
+        throw new DiffFileError(`Batch validation failed: ${validation.errors.join(', ')}`);
       }
 
       const config = this.configManager.getConfig();
@@ -257,7 +250,7 @@ export class StyleDiffEngine {
                 // Handle branch-based file comparison
                 return this.compareBranchFiles(comparison);
               default:
-                throw new DiffEngineError(`Unknown comparison type: ${(comparison as any).type}`);
+                throw new DiffFileError(`Unknown comparison type: ${(comparison as any).type}`);
             }
           })
         );
@@ -269,7 +262,7 @@ export class StyleDiffEngine {
 
     } catch (error) {
       this.performanceTracker.recordError();
-      throw new DiffEngineError(`Batch comparison failed: ${error.message}`, error);
+      throw new DiffFileError(`Batch comparison failed: ${(error as Error).message}`, undefined, error);
     } finally {
       this.performanceTracker.endOperation(operationId);
     }
@@ -291,7 +284,7 @@ export class StyleDiffEngine {
       return rendered.content;
     } catch (error) {
       this.performanceTracker.recordError();
-      throw new DiffEngineError(`Rendering failed: ${error.message}`, error);
+      throw new DiffFileError(`Rendering failed: ${(error as Error).message}`, undefined, error);
     } finally {
       this.performanceTracker.endOperation(operationId);
     }
@@ -346,7 +339,7 @@ export class StyleDiffEngine {
   private async compareBranchFiles(comparison: DiffComparison): Promise<StyleDiffResult> {
     // This would integrate with Git operations to get file contents from different branches
     // For now, we'll throw an error indicating this needs Git integration
-    throw new DiffEngineError('Branch file comparison requires Git integration');
+    throw new DiffFileError('Branch file comparison requires Git integration');
   }
 
   private mergeOptions(options?: Partial<StyleDiffOptions>): StyleDiffOptions {
@@ -420,10 +413,9 @@ export class StyleDiffEngine {
     
     // Reconfigure components with new settings
     // This would update the individual components based on new configuration
-    // For now, we'll just validate the new configuration
-    const validation = this.configManager.validateConfig();
-    if (!validation.isValid) {
-      throw new DiffEngineError(`Configuration update failed: ${validation.errors.join(', ')}`);
+    // For now, we'll just validate the new configuration    const validation = this.configManager.validateConfig();
+    if (!validation.valid) {
+      throw new DiffFileError(`Configuration update failed: ${validation.errors.join(', ')}`);
     }
   }
 }

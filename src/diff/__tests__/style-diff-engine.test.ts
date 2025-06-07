@@ -1,5 +1,4 @@
 import { StyleDiffEngine } from '../style-diff-engine';
-import { StyleDiffEngine } from '../style-diff-engine';
 import { StyleDiffEngineFactory, createQuickEngine, createDevelopmentEngine } from '../engine-factory';
 import { EngineConfigManager } from '../engine-config';
 import { DiffAnalysisMode, DiffRenderFormat } from '../types';
