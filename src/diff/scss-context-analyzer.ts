@@ -301,9 +301,7 @@ export class ScssContextAnalyzer {
           }
         }
       }
-    }
-
-    // Find removed rules
+    }    // Find removed rules
     for (const [selector, oldRule] of oldRuleMap) {
       if (!newRuleMap.has(selector)) {
         for (const [property, oldValue] of oldRule.properties) {
@@ -319,14 +317,60 @@ export class ScssContextAnalyzer {
       }
     }
 
+    // Compare variables
+    for (const [variableName, newValue] of newAnalysis.variables) {
+      const oldValue = oldAnalysis.variables.get(variableName);
+      
+      if (oldValue !== newValue) {
+        changes.push({
+          selector: 'variable',
+          property: variableName,
+          oldValue,
+          newValue,
+          context: {
+            variables: newAnalysis.variables,
+            mixins: [],
+            imports: [],
+            nestingPath: []
+          },
+          semanticImpact: this.determineSemanticImpact(variableName, oldValue, newValue),
+          affectedSelectors: [`$${variableName}`]
+        });
+      }
+    }
+
+    // Check for removed variables
+    for (const [variableName, oldValue] of oldAnalysis.variables) {
+      if (!newAnalysis.variables.has(variableName)) {
+        changes.push({
+          selector: 'variable',
+          property: variableName,
+          oldValue,
+          context: {
+            variables: oldAnalysis.variables,
+            mixins: [],
+            imports: [],
+            nestingPath: []
+          },
+          semanticImpact: 'breaking',
+          affectedSelectors: [`$${variableName}`]
+        });
+      }
+    }
+
     return changes;
   }
-
   /**
    * Resolve variables in a given context
    */
   resolveVariables(value: string, context: ScssContext): string {
-    return this.variableResolver.resolveValue(value, context.variables);
+    // Simple synchronous variable resolution for SCSS context analysis
+    let resolved = value;
+    for (const [variableName, variableValue] of context.variables) {
+      const pattern = new RegExp(`\\$${variableName}\\b`, 'g');
+      resolved = resolved.replace(pattern, variableValue);
+    }
+    return resolved;
   }
 
   private extractImportPath(line: string): string | null {
@@ -360,11 +404,25 @@ export class ScssContextAnalyzer {
     const match = line.match(/@media\s+([^{]+)/);
     return match ? match[1].trim() : null;
   }
-
   private extractSelector(line: string): string | null {
     const beforeBrace = line.split('{')[0].trim();
-    if (beforeBrace && !beforeBrace.startsWith('@') && !beforeBrace.includes(':')) {
-      return beforeBrace;
+    if (beforeBrace && !beforeBrace.startsWith('@') && !beforeBrace.startsWith('$')) {
+      // Handle SCSS nesting selectors (&)
+      if (beforeBrace.includes('&')) {
+        return beforeBrace;
+      }
+      // Handle regular selectors including pseudo-classes
+      if (beforeBrace.includes(':') && (beforeBrace.includes('hover') || beforeBrace.includes('focus') || beforeBrace.includes('active'))) {
+        return beforeBrace;
+      }
+      // Handle regular selectors without colons (except pseudo-classes)
+      if (!beforeBrace.includes(':')) {
+        return beforeBrace;
+      }
+      // Handle selectors with pseudo-classes/elements
+      if (beforeBrace.match(/[.#\w]+:[a-zA-Z-]+/)) {
+        return beforeBrace;
+      }
     }
     return null;
   }
@@ -410,25 +468,29 @@ export class ScssContextAnalyzer {
       }
     }
   }
-
   private calculateComplexity(result: ScssAnalysisResult): 'low' | 'medium' | 'high' {
     let complexityScore = 0;
 
-    // Nesting depth contribution
-    complexityScore += result.nestingDepth * 2;
+    // Nesting depth contribution (higher weight for deeper nesting)
+    complexityScore += result.nestingDepth * 3;
 
     // Number of rules contribution
-    complexityScore += result.rules.length;
+    complexityScore += result.rules.length * 2;
 
     // Number of media queries contribution
-    complexityScore += result.mediaQueries.length * 3;
+    complexityScore += result.mediaQueries.length * 4;
 
     // Number of variables contribution
     complexityScore += result.variables.size;
 
-    if (complexityScore < 10) {
+    // Special bonus for deep nesting (4+ levels)
+    if (result.nestingDepth >= 4) {
+      complexityScore += 10;
+    }
+
+    if (complexityScore < 8) {
       return 'low';
-    } else if (complexityScore < 25) {
+    } else if (complexityScore < 20) {
       return 'medium';
     } else {
       return 'high';

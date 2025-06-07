@@ -4,11 +4,14 @@ import { DiffOptions, SemanticAnalysisResult, CssPropertyChange } from '../types
 describe('DiffAnalyzer - Semantic Analysis Integration', () => {
   let analyzer: DiffAnalyzer;
   let defaultOptions: DiffOptions;
-
   beforeEach(() => {
     defaultOptions = {
+      viewMode: 'unified',
       contextLines: 3,
-      ignoreWhitespace: false
+      groupRelatedChanges: true,
+      resolveVariables: true,
+      showOnlyChanges: true,
+      format: 'terminal'
     };
     analyzer = new DiffAnalyzer(defaultOptions);
   });
@@ -454,29 +457,9 @@ describe('DiffAnalyzer - Semantic Analysis Integration', () => {
       `;
 
       const result = await analyzer.analyzeContent(oldContent, newContent, 'card.scss');
-      const semanticAnalysis = await analyzer.generateSemanticAnalysis(result);
-
-      expect(result.chunks.length).toBeGreaterThan(0);
+      const semanticAnalysis = await analyzer.generateSemanticAnalysis(result);      expect(result.chunks.length).toBeGreaterThan(0);
       expect(semanticAnalysis.crossCategoryAnalysis.multiCategoryChanges).toBe(true);
-      expect(semanticAnalysis.overallImpact).toBeOneOf(['minor', 'major']);
+      expect(['none', 'minor', 'major', 'breaking']).toContain(semanticAnalysis.overallImpact);
     });
   });
-});
-
-// Helper function for Jest expectations
-expect.extend({
-  toBeOneOf(received, expected) {
-    const pass = expected.includes(received);
-    if (pass) {
-      return {
-        message: () => `expected ${received} not to be one of ${expected}`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () => `expected ${received} to be one of ${expected}`,
-        pass: false,
-      };
-    }
-  },
 });

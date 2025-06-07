@@ -188,9 +188,8 @@ export class CssPropertyCategorizer {
     }
     return 'low';
   }
-
   private normalizePropertyName(property: string): string {
-    return property.toLowerCase().trim().replace(/^-{1,2}/, '');
+    return property.toLowerCase().trim().replace(/^-(?:webkit|moz|ms|o)-/, '');
   }
 
   private initializePropertyDatabase(): void {
