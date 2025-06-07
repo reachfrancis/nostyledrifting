@@ -52,7 +52,7 @@ export class StyleDiffEngine {
     
     this.configManager = new EngineConfigManager(engineConfig);
     const config = this.configManager.getConfig();    // Initialize core components
-    const analysisOptions: Partial<DiffOptions> = {
+    const analysisOptions: Partial<StyleDiffOptions> = {
       viewMode: 'unified',
       contextLines: config.analysis.contextDepth,
       groupRelatedChanges: true,
@@ -158,13 +158,11 @@ export class StyleDiffEngine {
       this.performanceTracker.recordCacheMiss();
 
       // Merge options with defaults
-      const mergedOptions = this.mergeOptions(options);
-
-      // Perform text-level diff analysis
-      const textDiff = await this.diffAnalyzer.analyze(content1, content2, mergedOptions);
+      const mergedOptions = this.mergeOptions(options);      // Perform text-level diff analysis
+      const textDiff = await this.diffAnalyzer.analyzeContent(content1, content2);
 
       // Perform context-aware semantic analysis
-      const semanticDiff = await this.contextAnalyzer.analyze(content1, content2, mergedOptions);
+      const semanticDiff = await this.contextAnalyzer.analyzeContent(content1, content2);
 
       // Combine results
       const result: StyleDiffResult = {
@@ -247,7 +245,8 @@ export class StyleDiffEngine {
     this.performanceTracker.startOperation(operationId);
 
     try {
-      // Validate batch operation      const validation = EngineValidator.validateBatchOperation(comparisons);
+      // Validate batch operation
+      const validation = EngineValidator.validateBatchOperation(comparisons);
       if (!validation.valid) {
         throw new DiffFileError(`Batch validation failed: ${validation.errors.join(', ')}`);
       }
@@ -298,10 +297,10 @@ export class StyleDiffEngine {
     options?: any
   ): Promise<string> {
     const operationId = `render_${Date.now()}`;
-    this.performanceTracker.startOperation(operationId);
-
-    try {
-      const rendered = await this.renderer.render(result, format, options);
+    this.performanceTracker.startOperation(operationId);    try {
+      // Convert DiffRenderFormat to RenderFormat
+      const renderFormat = format as 'terminal' | 'json' | 'html';
+      const rendered = await this.renderer.render(result, renderFormat);
       return rendered.content;
     } catch (error) {
       this.performanceTracker.recordError();

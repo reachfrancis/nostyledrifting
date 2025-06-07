@@ -30,9 +30,8 @@ const createMockDiffResult = (): StyleDiffResult => ({
     comparisonTime: new Date(),
     processingTimeMs: 150,
     diffAlgorithm: 'myers',
-    version: '1.0.0',
-    engineVersion: '1.0.0',
-    analysisMode: 'semantic',
+    version: '1.0.0',    engineVersion: '1.0.0',
+    analysisMode: DiffAnalysisMode.SEMANTIC,
     cacheUsed: false,
     options: {
       viewMode: 'unified',
@@ -377,15 +376,14 @@ describe('Diff Rendering System', () => {
           lowImpactChanges: 0,
           addedLines: 0,
           removedLines: 0,
-          modifiedLines: 0
-        },
-        fileDiffs: [],        metadata: {
+          modifiedLines: 0        },
+        fileDiffs: [],
+        chunks: [],metadata: {
           comparisonTime: new Date(),
           processingTimeMs: 0,
-          diffAlgorithm: 'test',
-          version: '1.0.0',
+          diffAlgorithm: 'test',          version: '1.0.0',
           engineVersion: '1.0.0',
-          analysisMode: 'semantic',
+          analysisMode: DiffAnalysisMode.SEMANTIC,
           cacheUsed: false,
           options: {
             viewMode: 'unified',

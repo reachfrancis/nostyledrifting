@@ -9,6 +9,7 @@ import {
   DiffSummary,
   FileDiffSummary,
   DiffMetadata,
+  DiffAnalysisMode,
   ChunkContext,
   ScssContext,
   DEFAULT_DIFF_OPTIONS,
@@ -59,11 +60,11 @@ describe('DiffOptions', () => {
   });
 });
 
-describe('StyleDiffResult', () => {
-  const mockStyleDiffResult: StyleDiffResult = {
+describe('StyleDiffResult', () => {  const mockStyleDiffResult: StyleDiffResult = {
     branch1: 'main',
     branch2: 'feature-branch',
-    fileDiffs: [],    summary: {
+    fileDiffs: [],
+    chunks: [],summary: {
       filesChanged: 0,
       totalChanges: 0,
       linesAdded: 0,
@@ -76,12 +77,14 @@ describe('StyleDiffResult', () => {
       addedLines: 0,
       removedLines: 0,
       modifiedLines: 0
-    },
-    metadata: {
+    },    metadata: {
       comparisonTime: new Date(),
       processingTimeMs: 100,
       diffAlgorithm: 'myers',
       version: '1.0.0',
+      engineVersion: '1.0.0',
+      analysisMode: DiffAnalysisMode.TEXT,
+      cacheUsed: false,
       options: DEFAULT_DIFF_OPTIONS
     }
   };
