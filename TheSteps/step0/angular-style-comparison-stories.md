@@ -104,6 +104,14 @@ ng-style-compare --repo /path/to/angular-project --branch1 main --branch2 featur
 ---
 ## Epic 4: Change Detection and Categorization
 
+06.07.2025 - Left off here
+Story 4.1 has been broken down 
+into tasks reference step3/
+
+Working on task_4 - I think the agent is 
+done but the application is not compiling.
+
+
 ### Story 4.1: Style Diff Engine
 **As a** code reviewer  
 **I want to** see precise differences between style versions  
